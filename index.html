@@ -354,9 +354,11 @@
       const noteDisplay = document.getElementById('curator-note-display');
       if (noteDisplay) noteDisplay.innerText = `"${CURATOR_NOTE}"`;
 
-      // Collage Layout Configuration
-      const totalSpan = 110; 
-      const radius = 4.6;
+      // Organized 3x3 Grid Configuration
+      const numCols = 3;
+      const arcPadding = 22; // Degrees between columns for comfortable viewing
+      const yStep = 1.2;     // Vertical distance between rows
+      const radius = 5.2;    // Distance from the viewer
 
       // Initialize Items
       GALLERY_DATA.forEach((item, index) => {
@@ -368,26 +370,22 @@
         img.referrerPolicy = "no-referrer";
         assets.appendChild(img);
 
-        // 2. Collage Positioning Logic
-        const angle = -(totalSpan / 2) + (index * (totalSpan / (GALLERY_DATA.length - 1)));
+        // 2. Organized Positioning Logic (3x3 Grid)
+        const col = index % numCols;
+        const row = Math.floor(index / numCols);
+
+        // Calculate horizontal position along an arc
+        const angle = (col - 1) * arcPadding;
         const rad = angle * (Math.PI / 180);
         
-        // Stagger height and depth for "collage" effect
-        // Pattern: High, Low, Middle, High, Low, Middle...
-        let yOffset = 0;
-        if (index % 3 === 0) yOffset = 0.75;  // Top row
-        else if (index % 3 === 1) yOffset = -0.65; // Bottom row
-        else yOffset = 0.05; // Middle row
-
-        // Extra "Collage" personality: Subtle horizontal shifts and depth layers
-        const jitterX = (Math.sin(index * 1.5) * 0.15); 
-        const layerZ = (index % 2 === 0 ? 0.3 : -0.2); // Alternating layers
-
-        let posX = Math.sin(rad) * (radius + layerZ) + jitterX;
-        let posZ = -Math.cos(rad) * (radius + layerZ);
+        let posX = Math.sin(rad) * radius;
+        let posZ = -Math.cos(rad) * radius;
+        
+        // Calculate vertical position (Top, Middle, Bottom)
+        const posY = (1 - row) * yStep;
         
         const entity = document.createElement('a-entity');
-        entity.setAttribute('position', `${posX} ${yOffset} ${posZ}`);
+        entity.setAttribute('position', `${posX} ${posY} ${posZ}`);
         entity.setAttribute('rotation', `0 ${-angle} 0`);
 
         // 3. Create the Frame & Canvas (Landscape friendly)
