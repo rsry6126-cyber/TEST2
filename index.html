@@ -356,8 +356,8 @@
 
       // Organized 3x3 Grid Configuration
       const numCols = 3;
-      const arcPadding = 22; // Degrees between columns for comfortable viewing
-      const yStep = 1.2;     // Vertical distance between rows
+      const arcPadding = 24; // Slightly wider arc for better clarity
+      const yStep = 1.1;     // Adjusted vertical distance
       const radius = 5.2;    // Distance from the viewer
 
       // Initialize Items
@@ -381,8 +381,9 @@
         let posX = Math.sin(rad) * radius;
         let posZ = -Math.cos(rad) * radius;
         
-        // Calculate vertical position (Top, Middle, Bottom)
-        const posY = (1 - row) * yStep;
+        // Calculate vertical position (Shifted UP to prevent floor overlap)
+        // Row 0 = Top, Row 1 = Mid, Row 2 = Bottom
+        const posY = (1.1 - row) * yStep; 
         
         const entity = document.createElement('a-entity');
         entity.setAttribute('position', `${posX} ${posY} ${posZ}`);
