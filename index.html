@@ -354,23 +354,9 @@
       const noteDisplay = document.getElementById('curator-note-display');
       if (noteDisplay) noteDisplay.innerText = `"${CURATOR_NOTE}"`;
 
-      // Initialize Groups
-      const groupEntities = [];
-      const numGroups = 3;
-      const groupRadius = 4.8; // Adjusted distance for better viewing without overlap
-      const totalGroupSpan = 85; // Increased span to separate groups
-      
-      for (let g = 0; g < numGroups; g++) {
-        const groupAngle = -(totalGroupSpan / 2) + (g * (totalGroupSpan / (numGroups - 1)));
-        const gx = Math.sin(groupAngle * (Math.PI / 180)) * groupRadius;
-        const gz = -Math.cos(groupAngle * (Math.PI / 180)) * groupRadius;
-        
-        const groupEl = document.createElement('a-entity');
-        groupEl.setAttribute('position', `${gx} 0 ${gz}`); 
-        groupEl.setAttribute('rotation', `0 ${-groupAngle} 0`);
-        container.appendChild(groupEl);
-        groupEntities.push(groupEl);
-      }
+      // Collage Layout Configuration
+      const totalSpan = 110; 
+      const radius = 4.6;
 
       // Initialize Items
       GALLERY_DATA.forEach((item, index) => {
@@ -382,22 +368,27 @@
         img.referrerPolicy = "no-referrer";
         assets.appendChild(img);
 
-        // 2. Group Position Logic (3 groups of 3: 1 parent above, 2 children below)
-        const groupIndex = Math.floor(index / 3);
-        const itemInGroup = index % 3; // 0=Parent, 1=ChildL, 2=ChildR
-        const groupEntity = groupEntities[groupIndex];
+        // 2. Collage Positioning Logic
+        const angle = -(totalSpan / 2) + (index * (totalSpan / (GALLERY_DATA.length - 1)));
+        const rad = angle * (Math.PI / 180);
+        
+        // Stagger height and depth for "collage" effect
+        // Pattern: High, Low, Middle, High, Low, Middle...
+        let yOffset = 0;
+        if (index % 3 === 0) yOffset = 0.75;  // Top row
+        else if (index % 3 === 1) yOffset = -0.65; // Bottom row
+        else yOffset = 0.05; // Middle row
 
-        let localX = 0, localY = 0;
-        if (itemInGroup === 0) {
-          localY = 0.65; // Parent
-          localX = 0;
-        } else {
-          localY = -0.45; // Children
-          localX = itemInGroup === 1 ? -0.95 : 0.95; // Closer internal spacing
-        }
+        // Extra "Collage" personality: Subtle horizontal shifts and depth layers
+        const jitterX = (Math.sin(index * 1.5) * 0.15); 
+        const layerZ = (index % 2 === 0 ? 0.3 : -0.2); // Alternating layers
+
+        let posX = Math.sin(rad) * (radius + layerZ) + jitterX;
+        let posZ = -Math.cos(rad) * (radius + layerZ);
         
         const entity = document.createElement('a-entity');
-        entity.setAttribute('position', `${localX} ${localY} 0`);
+        entity.setAttribute('position', `${posX} ${yOffset} ${posZ}`);
+        entity.setAttribute('rotation', `0 ${-angle} 0`);
 
         // 3. Create the Frame & Canvas (Landscape friendly)
         const baseH = 1.0; 
@@ -409,7 +400,7 @@
           <a-image id="canvas-${item.id}" src="#img-${item.id}" width="${baseW}" height="${baseH}" class="clickable" gallery-item="id: ${item.id}"></a-image>
         `;
 
-        groupEntity.appendChild(entity);
+        container.appendChild(entity);
 
         // 4. Dynamic Sizing Logic: Detect real image dimensions
         const checkImg = new Image();
