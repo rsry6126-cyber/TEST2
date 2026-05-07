@@ -340,7 +340,7 @@
         </div>
         
         <h2 class="text-white text-5xl font-serif italic font-semibold mb-4 tracking-tight">STF Photo</h2>
-        <p class="text-white/40 font-display text-[10px] uppercase tracking-[0.4em] mb-10">AR Experience</p>
+        <p class="text-white/40 font-display text-[10px] uppercase tracking-[0.4em] mb-10">VR-AR GALLERY</p>
         
         <div class="glass-light p-8 rounded-[2rem] mb-10 text-left relative overflow-hidden">
           <h4 class="text-white/80 text-xs font-bold uppercase tracking-widest mb-3 flex items-center gap-2">
@@ -385,7 +385,7 @@
       // 3x3 Grid Config
       const numCols = 3;
       const arcPadding = 30; 
-      const yRowStep = 1.4;     
+      const yRowStep = 1.0;     
       const radius = 4.2;    
 
       GALLERY_DATA.forEach((item, index) => {
@@ -406,7 +406,7 @@
         let posZ = -Math.cos(rad) * radius;
         
         const rowOffset = (Math.floor(GALLERY_DATA.length / numCols) - 1) / 2;
-        const posY = (rowOffset - row) * yRowStep + 0.8; 
+        const posY = (rowOffset - row) * yRowStep + 0.1; 
         
         const entity = document.createElement('a-entity');
         entity.setAttribute('position', `${posX} ${posY} ${posZ}`);
