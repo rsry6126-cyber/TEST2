@@ -73,6 +73,19 @@
 
       // 2. A-Frame Component Registration (Must be before scene)
       if (typeof AFRAME !== 'undefined') {
+        AFRAME.registerComponent('hover-float', {
+          schema: { offset: {type: 'number', default: 0} },
+          init: function() {
+            this.initialY = this.el.object3D.position.y;
+          },
+          tick: function (t) {
+            const yOffset = Math.sin((t + this.data.offset) / 1000) * 0.05;
+            this.el.object3D.position.y = this.initialY + yOffset;
+            const rotOffset = Math.cos((t + this.data.offset) / 2000) * 0.5;
+            this.el.object3D.rotation.z = THREE.MathUtils.degToRad(rotOffset);
+          }
+        });
+
         AFRAME.registerComponent('maintain-perceived-size', {
           schema: { 
             baseScale: {type: 'number', default: 1},
@@ -372,7 +385,7 @@
       // 3x3 Grid Config
       const numCols = 3;
       const arcPadding = 30; 
-      const yRowStep = 1.0;     
+      const yRowStep = 1.4;     
       const radius = 4.2;    
 
       GALLERY_DATA.forEach((item, index) => {
@@ -393,11 +406,12 @@
         let posZ = -Math.cos(rad) * radius;
         
         const rowOffset = (Math.floor(GALLERY_DATA.length / numCols) - 1) / 2;
-        const posY = (rowOffset - row) * yRowStep + 1.6; 
+        const posY = (rowOffset - row) * yRowStep + 0.8; 
         
         const entity = document.createElement('a-entity');
         entity.setAttribute('position', `${posX} ${posY} ${posZ}`);
         entity.setAttribute('rotation', `0 ${-angle} 0`);
+        entity.setAttribute('hover-float', `offset: ${index * 500}`);
         entity.setAttribute('maintain-perceived-size', '');
 
         const baseH = 1.0; 
