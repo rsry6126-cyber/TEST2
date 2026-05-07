@@ -385,7 +385,7 @@
       // 3x3 Grid Config
       const numCols = 3;
       const arcPadding = 30; 
-      const yRowStep = 1.4;     
+      const yRowStep = 1.1;     
       const radius = 4.2;    
 
       GALLERY_DATA.forEach((item, index) => {
@@ -406,7 +406,7 @@
         let posZ = -Math.cos(rad) * radius;
         
         const rowOffset = (Math.floor(GALLERY_DATA.length / numCols) - 1) / 2;
-        const posY = (rowOffset - row) * yRowStep + 0.8; 
+        const posY = (rowOffset - row) * yRowStep + 0.1; 
         
         const entity = document.createElement('a-entity');
         entity.setAttribute('position', `${posX} ${posY} ${posZ}`);
