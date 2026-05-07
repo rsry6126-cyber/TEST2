@@ -73,23 +73,10 @@
 
       // 2. A-Frame Component Registration (Must be before scene)
       if (typeof AFRAME !== 'undefined') {
-        AFRAME.registerComponent('hover-float', {
-          schema: { offset: {type: 'number', default: 0} },
-          init: function() {
-            this.initialY = this.el.object3D.position.y;
-          },
-          tick: function (t) {
-            const yOffset = Math.sin((t + this.data.offset) / 1000) * 0.05;
-            this.el.object3D.position.y = this.initialY + yOffset;
-            const rotOffset = Math.cos((t + this.data.offset) / 2000) * 0.5;
-            this.el.object3D.rotation.z = THREE.MathUtils.degToRad(rotOffset);
-          }
-        });
-
         AFRAME.registerComponent('maintain-perceived-size', {
           schema: { 
             baseScale: {type: 'number', default: 1},
-            referenceDistance: {type: 'number', default: 4.0} // Radius for this layout
+            referenceDistance: {type: 'number', default: 4.2} // Radius for this layout
           },
           tick: function () {
             const cameraEl = this.el.sceneEl.camera.el;
@@ -386,7 +373,7 @@
       const numCols = 3;
       const arcPadding = 30; 
       const yRowStep = 1.0;     
-      const radius = 4.0;    
+      const radius = 4.2;    
 
       GALLERY_DATA.forEach((item, index) => {
         const img = document.createElement('img');
@@ -411,7 +398,6 @@
         const entity = document.createElement('a-entity');
         entity.setAttribute('position', `${posX} ${posY} ${posZ}`);
         entity.setAttribute('rotation', `0 ${-angle} 0`);
-        entity.setAttribute('hover-float', `offset: ${index * 500}`);
         entity.setAttribute('maintain-perceived-size', '');
 
         const baseH = 1.0; 
