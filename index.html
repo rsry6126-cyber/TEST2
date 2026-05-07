@@ -89,7 +89,7 @@
         AFRAME.registerComponent('maintain-perceived-size', {
           schema: { 
             baseScale: {type: 'number', default: 1},
-            referenceDistance: {type: 'number', default: 4.2} // Radius for this layout
+            referenceDistance: {type: 'number', default: 4.0} // Radius for this layout
           },
           tick: function () {
             const cameraEl = this.el.sceneEl.camera.el;
@@ -386,7 +386,7 @@
       const numCols = 3;
       const arcPadding = 30; 
       const yRowStep = 1.0;     
-      const radius = 4.2;    
+      const radius = 4.0;    
 
       GALLERY_DATA.forEach((item, index) => {
         const img = document.createElement('img');
