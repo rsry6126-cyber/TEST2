@@ -28,7 +28,7 @@
       .mindar-ui-loading { display: none !important; }
       .mindar-ui-scanning { display: none !important; }
 
-      /* Force MindAR video feed to sit in background, full viewport cover */
+      /* Force MindAR camera video feed to sit in background, full viewport cover */
       video:not(#artwork-video) {
         position: fixed !important;
         top: 0 !important;
@@ -186,6 +186,7 @@
         backdrop-filter: blur(8px);
         cursor: pointer;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        transition: all 0.2s ease;
       }
 
       /* Top Header Status */
@@ -238,7 +239,7 @@
       }
     </style>
 
-    <!-- CRITICAL CAMERA POLYFILL & UNBLOCKER FOR MINDAR -->
+    <!-- CAMERA INITIALIZER & POLYFILL FOR MINDAR -->
     <script>
       (function() {
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -248,11 +249,9 @@
 
         const nativeGUM = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
 
-        // Intercept getUserMedia so MindAR's hardcoded exact 'facingMode: environment' doesn't fail on webcams/laptops
+        // Intercept getUserMedia so MindAR's exact facingMode doesn't fail on laptops/desktops
         navigator.mediaDevices.getUserMedia = async function(constraints) {
           console.log("[AR Engine] Requesting camera with constraints:", constraints);
-
-          // 1. Try rear environment camera first with ideal constraints
           try {
             const idealConstraints = {
               audio: false,
@@ -267,7 +266,6 @@
             return stream;
           } catch (err1) {
             console.warn("[AR Engine] Ideal environment camera failed, falling back to any video device:", err1);
-            // 2. Fallback to generic video (laptop webcam, desktop camera, front camera)
             try {
               const fallbackStream = await nativeGUM({ audio: false, video: true });
               console.log("[AR Engine] Camera opened with generic fallback stream.");
@@ -334,65 +332,6 @@
     <!-- A-Frame & MindAR -->
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
-
-    <!-- Custom High-Precision Pose Smoother Component
-         Eliminates camera tracking jitter with exponential smoothing (lerp + slerp) -->
-    <script>
-      AFRAME.registerComponent('smooth-stabilizer', {
-        schema: {
-          factor: { type: 'number', default: 0.18 }, // Lerp weight: smaller = rock-solid stability
-          enabled: { type: 'boolean', default: true }
-        },
-        init: function() {
-          this.targetAnchor = document.getElementById('target-anchor');
-          this.targetPos = new AFRAME.THREE.Vector3();
-          this.targetRot = new AFRAME.THREE.Quaternion();
-          this.targetScale = new AFRAME.THREE.Vector3(1, 1, 1);
-          this.isTracking = false;
-
-          // When artwork target is detected
-          this.targetAnchor.addEventListener('targetFound', () => {
-            this.isTracking = true;
-            this.el.object3D.visible = true;
-
-            // Immediately snap on first frame to prevent lagging jump
-            const anchorObj = this.targetAnchor.object3D;
-            anchorObj.matrix.decompose(this.targetPos, this.targetRot, this.targetScale);
-            this.el.object3D.position.copy(this.targetPos);
-            this.el.object3D.quaternion.copy(this.targetRot);
-            this.el.object3D.scale.copy(this.targetScale);
-          });
-
-          // When target is lost
-          this.targetAnchor.addEventListener('targetLost', () => {
-            this.isTracking = false;
-            this.el.object3D.visible = false;
-          });
-        },
-        tick: function() {
-          if (!this.isTracking || !this.targetAnchor.object3D.visible) {
-            return;
-          }
-
-          const anchorObj = this.targetAnchor.object3D;
-          anchorObj.matrix.decompose(this.targetPos, this.targetRot, this.targetScale);
-
-          if (!this.data.enabled) {
-            // Raw mode (no extra lerp)
-            this.el.object3D.position.copy(this.targetPos);
-            this.el.object3D.quaternion.copy(this.targetRot);
-            this.el.object3D.scale.copy(this.targetScale);
-            return;
-          }
-
-          // Ultra-smooth interpolation: lerp position & scale, slerp rotation
-          const lerpFactor = this.data.factor;
-          this.el.object3D.position.lerp(this.targetPos, lerpFactor);
-          this.el.object3D.quaternion.slerp(this.targetRot, lerpFactor);
-          this.el.object3D.scale.lerp(this.targetScale, lerpFactor);
-        }
-      });
-    </script>
   </head>
   <body>
     <!-- Top Header Status -->
@@ -419,19 +358,21 @@
     </div>
 
     <!-- Stability Toggle Badge -->
-    <div id="stability-badge" title="Click to toggle between Ultra-Smooth and Responsive tracking">
+    <div id="stability-badge" title="Click to toggle stability settings">
       <span>🛡️ Stabilizer: <strong>Ultra-Smooth</strong></span>
     </div>
 
     <!-- Sound Toggle -->
-    <div id="audio-badge">🔈 Sound Muted (Tap to Play)</div>
+    <div id="audio-badge">🔈 Sound Muted (Tap for Sound)</div>
 
     <!-- A-Frame WebAR Scene with MindAR Tracking
-         Optimized parameters: filterMinCF: 0.0001 (maximum tremor reduction),
-         filterBeta: 0.1 (lowered speed coefficient removes erratic jumps),
-         missTolerance: 8 (keeps overlay firmly attached during minor blurs/handshakes) -->
+         Stabilization settings:
+         - filterMinCF: 0.0001 (removes high-frequency micro-tremor when holding still)
+         - filterBeta: 0.05 (suppresses erratic velocity spikes)
+         - missTolerance: 8 (prevents flickering if a camera frame is blurry)
+         - warmupTolerance: 2 (quick detection) -->
     <a-scene
-      mindar-image="imageTargetSrc: ./assets/targets.mind; filterMinCF: 0.0001; filterBeta: 0.1; warmupTolerance: 3; missTolerance: 8; autoStart: true;"
+      mindar-image="imageTargetSrc: ./assets/targets.mind; filterMinCF: 0.0001; filterBeta: 0.05; warmupTolerance: 2; missTolerance: 8; autoStart: true;"
       color-space="sRGB"
       renderer="colorManagement: true, physicallyCorrectLights: true, alpha: true"
       vr-mode-ui="enabled: false"
@@ -454,17 +395,15 @@
 
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-      <!-- Raw Target Anchor from MindAR (kept empty as tracking source) -->
-      <a-entity id="target-anchor" mindar-image-target="targetIndex: 0"></a-entity>
-
-      <!-- Smoothed Video Overlay Container: Glued to the target with zero jitter -->
-      <a-entity id="stabilized-content" smooth-stabilizer="factor: 0.18; enabled: true">
+      <!-- Target Anchor: The <a-video> MUST be a direct child of mindar-image-target
+           so MindAR's camera matrix aligns it with the physical artwork -->
+      <a-entity id="target-anchor" mindar-image-target="targetIndex: 0">
         <a-video
           id="ar-video-plane"
           src="#artwork-video"
           position="0 0 0"
           height="1"
-          width="1.333"
+          width="1.778"
           rotation="0 0 0"
         ></a-video>
       </a-entity>
@@ -473,7 +412,7 @@
     <script>
       const video = document.getElementById('artwork-video');
       const targetAnchor = document.getElementById('target-anchor');
-      const stabilizedContent = document.getElementById('stabilized-content');
+      const videoPlane = document.getElementById('ar-video-plane');
       const loader = document.getElementById('ar-loader');
       const loaderStatus = document.getElementById('loader-status');
       const loaderTitle = document.getElementById('loader-title');
@@ -484,6 +423,28 @@
       const audioBadge = document.getElementById('audio-badge');
       const stabilityBadge = document.getElementById('stability-badge');
       const scene = document.querySelector('a-scene');
+
+      // Auto-adjust video plane dimensions to match exact video aspect ratio
+      video.addEventListener('loadedmetadata', () => {
+        if (video.videoWidth && video.videoHeight) {
+          const aspect = video.videoWidth / video.videoHeight;
+          if (videoPlane) {
+            videoPlane.setAttribute('width', aspect.toFixed(3));
+            videoPlane.setAttribute('height', '1');
+            console.log('[AR Engine] Video aspect ratio set:', aspect.toFixed(3));
+          }
+        }
+      });
+
+      // Force video texture update in Three.js when video plays to prevent black overlay
+      video.addEventListener('playing', () => {
+        if (videoPlane && videoPlane.components && videoPlane.components.material) {
+          const mat = videoPlane.components.material.material;
+          if (mat && mat.map) {
+            mat.map.needsUpdate = true;
+          }
+        }
+      });
 
       // Check HTTPS requirement
       if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
@@ -521,26 +482,31 @@
           errorAction.style.display = 'block';
           errorAction.onclick = () => {
             navigator.mediaDevices.getUserMedia({ audio: false, video: true })
-              .then(stream => {
-                location.reload();
-              })
-              .catch(err => {
-                alert('Please allow camera permissions in your browser address bar settings.');
-              });
+              .then(() => location.reload())
+              .catch(() => alert('Please allow camera permissions in your browser address bar settings.'));
           };
         }
       });
 
-      // 1. Play video ONLY when camera sees the physical artwork
+      // 1. Play video and show overlay when artwork is scanned
       targetAnchor.addEventListener('targetFound', () => {
         console.log('[AR Engine] Target artwork detected!');
         if (hud) hud.classList.add('hidden');
+        
+        // Ensure video texture updates immediately
+        if (videoPlane && videoPlane.components && videoPlane.components.material) {
+          const mat = videoPlane.components.material.material;
+          if (mat && mat.map) {
+            mat.map.needsUpdate = true;
+          }
+        }
+
         video.play().catch(e => {
           console.warn('[AR Engine] Video play prevented:', e);
         });
       });
 
-      // 2. Pause immediately when camera looks away
+      // 2. Pause video and restore scanning reticle when camera looks away
       targetAnchor.addEventListener('targetLost', () => {
         console.log('[AR Engine] Target lost.');
         if (hud) hud.classList.remove('hidden');
@@ -551,7 +517,7 @@
       function toggleAudio() {
         video.muted = !video.muted;
         if (video.muted) {
-          audioBadge.innerText = '🔈 Sound Muted (Tap to Play)';
+          audioBadge.innerText = '🔈 Sound Muted (Tap for Sound)';
           audioBadge.style.borderColor = 'rgba(255, 255, 255, 0.2)';
         } else {
           audioBadge.innerText = '🔊 Sound On';
@@ -565,31 +531,57 @@
         toggleAudio();
       });
 
-      // 4. Stabilizer mode toggle (Ultra-Smooth vs Responsive)
+      // Tap screen to ensure audio playback is unmuted on first gesture
+      window.addEventListener('click', (e) => {
+        // Only unmute if not clicking specific UI buttons
+        if (e.target !== stabilityBadge && !stabilityBadge.contains(e.target)) {
+          if (video.muted) {
+            toggleAudio();
+          }
+        }
+      }, { once: true });
+
+      // 4. Live Stabilizer Switcher (updates MindAR's 1EuroFilter parameters directly)
       let currentMode = 'ultra';
+      function applyStability(mode) {
+        currentMode = mode;
+        const arSystem = scene ? scene.systems['mindar-image-system'] : null;
+        const controller = arSystem ? arSystem.controller : null;
+        const filter = (controller && controller.trackingStates && controller.trackingStates[0])
+          ? controller.trackingStates[0].filter
+          : null;
+
+        if (mode === 'ultra') {
+          if (filter) {
+            filter.minCutOff = 0.0001;
+            filter.beta = 0.05;
+          }
+          stabilityBadge.innerHTML = '<span>🛡️ Stabilizer: <strong>Ultra-Smooth</strong></span>';
+        } else if (mode === 'balanced') {
+          if (filter) {
+            filter.minCutOff = 0.001;
+            filter.beta = 1.0;
+          }
+          stabilityBadge.innerHTML = '<span>⚡ Stabilizer: <strong>Balanced</strong></span>';
+        } else {
+          if (filter) {
+            filter.minCutOff = 0.01;
+            filter.beta = 100;
+          }
+          stabilityBadge.innerHTML = '<span>💨 Stabilizer: <strong>Fast Dynamic</strong></span>';
+        }
+      }
+
       stabilityBadge.addEventListener('click', (e) => {
         e.stopPropagation();
         if (currentMode === 'ultra') {
-          currentMode = 'balanced';
-          stabilizedContent.setAttribute('smooth-stabilizer', 'factor: 0.35; enabled: true');
-          stabilityBadge.innerHTML = '<span>⚡ Stabilizer: <strong>Balanced</strong></span>';
+          applyStability('balanced');
         } else if (currentMode === 'balanced') {
-          currentMode = 'raw';
-          stabilizedContent.setAttribute('smooth-stabilizer', 'enabled: false');
-          stabilityBadge.innerHTML = '<span>💨 Stabilizer: <strong>Raw Direct</strong></span>';
+          applyStability('fast');
         } else {
-          currentMode = 'ultra';
-          stabilizedContent.setAttribute('smooth-stabilizer', 'factor: 0.18; enabled: true');
-          stabilityBadge.innerHTML = '<span>🛡️ Stabilizer: <strong>Ultra-Smooth</strong></span>';
+          applyStability('ultra');
         }
       });
-
-      // Tap screen to ensure audio or video playback is enabled on first gesture
-      window.addEventListener('click', () => {
-        if (video.muted) {
-          toggleAudio();
-        }
-      }, { once: true });
     </script>
   </body>
 </html>
