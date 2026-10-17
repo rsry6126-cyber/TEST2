@@ -380,9 +380,23 @@
       style="position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 1;"
     >
       <a-assets>
+        <!-- Artwork 1 Video Overlay -->
         <video
           id="artwork-video"
           src="./assets/my-video.mp4"
+          preload="auto"
+          loop
+          playsinline
+          webkit-playsinline
+          x5-playsinline
+          muted
+          crossorigin="anonymous"
+        ></video>
+
+        <!-- Artwork 2 Video Overlay (Change src to your 2nd video, e.g. ./assets/video2.mp4) -->
+        <video
+          id="artwork-video-2"
+          src="./assets/my-video2.mp4"
           preload="auto"
           loop
           playsinline
@@ -395,8 +409,7 @@
 
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-      <!-- Target Anchor: The <a-video> MUST be a direct child of mindar-image-target
-           so MindAR's camera matrix aligns it with the physical artwork -->
+      <!-- Target Anchor 1: First Physical Artwork (targetIndex: 0) -->
       <a-entity id="target-anchor" mindar-image-target="targetIndex: 0">
         <a-video
           id="ar-video-plane"
@@ -407,12 +420,29 @@
           rotation="0 0 0"
         ></a-video>
       </a-entity>
+
+      <!-- Target Anchor 2: Second Physical Artwork (targetIndex: 1) -->
+      <a-entity id="target-anchor-2" mindar-image-target="targetIndex: 1">
+        <a-video
+          id="ar-video-plane-2"
+          src="#artwork-video-2"
+          position="0 0 0"
+          height="1"
+          width="1.778"
+          rotation="0 0 0"
+        ></a-video>
+      </a-entity>
     </a-scene>
 
     <script>
-      const video = document.getElementById('artwork-video');
-      const targetAnchor = document.getElementById('target-anchor');
-      const videoPlane = document.getElementById('ar-video-plane');
+      const video1 = document.getElementById('artwork-video');
+      const targetAnchor1 = document.getElementById('target-anchor');
+      const videoPlane1 = document.getElementById('ar-video-plane');
+
+      const video2 = document.getElementById('artwork-video-2');
+      const targetAnchor2 = document.getElementById('target-anchor-2');
+      const videoPlane2 = document.getElementById('ar-video-plane-2');
+
       const loader = document.getElementById('ar-loader');
       const loaderStatus = document.getElementById('loader-status');
       const loaderTitle = document.getElementById('loader-title');
@@ -424,27 +454,30 @@
       const stabilityBadge = document.getElementById('stability-badge');
       const scene = document.querySelector('a-scene');
 
-      // Auto-adjust video plane dimensions to match exact video aspect ratio
-      video.addEventListener('loadedmetadata', () => {
-        if (video.videoWidth && video.videoHeight) {
-          const aspect = video.videoWidth / video.videoHeight;
-          if (videoPlane) {
-            videoPlane.setAttribute('width', aspect.toFixed(3));
-            videoPlane.setAttribute('height', '1');
+      // Helper to auto-fit video planes to aspect ratio
+      function setupVideoAutoFit(videoEl, planeEl) {
+        if (!videoEl || !planeEl) return;
+        videoEl.addEventListener('loadedmetadata', () => {
+          if (videoEl.videoWidth && videoEl.videoHeight) {
+            const aspect = videoEl.videoWidth / videoEl.videoHeight;
+            planeEl.setAttribute('width', aspect.toFixed(3));
+            planeEl.setAttribute('height', '1');
             console.log('[AR Engine] Video aspect ratio set:', aspect.toFixed(3));
           }
-        }
-      });
+        });
 
-      // Force video texture update in Three.js when video plays to prevent black overlay
-      video.addEventListener('playing', () => {
-        if (videoPlane && videoPlane.components && videoPlane.components.material) {
-          const mat = videoPlane.components.material.material;
-          if (mat && mat.map) {
-            mat.map.needsUpdate = true;
+        videoEl.addEventListener('playing', () => {
+          if (planeEl.components && planeEl.components.material) {
+            const mat = planeEl.components.material.material;
+            if (mat && mat.map) {
+              mat.map.needsUpdate = true;
+            }
           }
-        }
-      });
+        });
+      }
+
+      setupVideoAutoFit(video1, videoPlane1);
+      setupVideoAutoFit(video2, videoPlane2);
 
       // Check HTTPS requirement
       if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
@@ -488,42 +521,62 @@
         }
       });
 
-      // 1. Play video and show overlay when artwork is scanned
-      targetAnchor.addEventListener('targetFound', () => {
-        console.log('[AR Engine] Target artwork detected!');
-        if (hud) hud.classList.add('hidden');
-        
-        // Ensure video texture updates immediately
-        if (videoPlane && videoPlane.components && videoPlane.components.material) {
-          const mat = videoPlane.components.material.material;
-          if (mat && mat.map) {
-            mat.map.needsUpdate = true;
-          }
-        }
+      let activeTargetCount = 0;
 
-        video.play().catch(e => {
-          console.warn('[AR Engine] Video play prevented:', e);
+      // Bind Artwork 1 Events
+      if (targetAnchor1) {
+        targetAnchor1.addEventListener('targetFound', () => {
+          console.log('[AR Engine] Artwork 1 detected!');
+          activeTargetCount++;
+          if (hud) hud.classList.add('hidden');
+          if (video2) video2.pause();
+          video1.play().catch(e => console.warn('Video 1 play error:', e));
         });
-      });
 
-      // 2. Pause video and restore scanning reticle when camera looks away
-      targetAnchor.addEventListener('targetLost', () => {
-        console.log('[AR Engine] Target lost.');
-        if (hud) hud.classList.remove('hidden');
-        video.pause();
-      });
+        targetAnchor1.addEventListener('targetLost', () => {
+          console.log('[AR Engine] Artwork 1 lost.');
+          activeTargetCount = Math.max(0, activeTargetCount - 1);
+          if (activeTargetCount === 0 && hud) hud.classList.remove('hidden');
+          video1.pause();
+        });
+      }
 
-      // 3. Audio toggle
-      function toggleAudio() {
-        video.muted = !video.muted;
-        if (video.muted) {
+      // Bind Artwork 2 Events
+      if (targetAnchor2) {
+        targetAnchor2.addEventListener('targetFound', () => {
+          console.log('[AR Engine] Artwork 2 detected!');
+          activeTargetCount++;
+          if (hud) hud.classList.add('hidden');
+          if (video1) video1.pause();
+          video2.play().catch(e => console.warn('Video 2 play error:', e));
+        });
+
+        targetAnchor2.addEventListener('targetLost', () => {
+          console.log('[AR Engine] Artwork 2 lost.');
+          activeTargetCount = Math.max(0, activeTargetCount - 1);
+          if (activeTargetCount === 0 && hud) hud.classList.remove('hidden');
+          video2.pause();
+        });
+      }
+
+      // Audio toggle
+      let isGlobalMuted = true;
+      function setMuteState(muted) {
+        isGlobalMuted = muted;
+        if (video1) video1.muted = muted;
+        if (video2) video2.muted = muted;
+
+        if (muted) {
           audioBadge.innerText = '🔈 Sound Muted (Tap for Sound)';
           audioBadge.style.borderColor = 'rgba(255, 255, 255, 0.2)';
         } else {
           audioBadge.innerText = '🔊 Sound On';
           audioBadge.style.borderColor = '#38bdf8';
-          video.play().catch(() => {});
         }
+      }
+
+      function toggleAudio() {
+        setMuteState(!isGlobalMuted);
       }
 
       audioBadge.addEventListener('click', (e) => {
@@ -533,41 +586,40 @@
 
       // Tap screen to ensure audio playback is unmuted on first gesture
       window.addEventListener('click', (e) => {
-        // Only unmute if not clicking specific UI buttons
         if (e.target !== stabilityBadge && !stabilityBadge.contains(e.target)) {
-          if (video.muted) {
-            toggleAudio();
+          if (isGlobalMuted) {
+            setMuteState(false);
           }
         }
       }, { once: true });
 
-      // 4. Live Stabilizer Switcher (updates MindAR's 1EuroFilter parameters directly)
+      // Live Stabilizer Switcher (updates MindAR's 1EuroFilter for ALL targets)
       let currentMode = 'ultra';
       function applyStability(mode) {
         currentMode = mode;
         const arSystem = scene ? scene.systems['mindar-image-system'] : null;
         const controller = arSystem ? arSystem.controller : null;
-        const filter = (controller && controller.trackingStates && controller.trackingStates[0])
-          ? controller.trackingStates[0].filter
-          : null;
+        const trackingStates = (controller && controller.trackingStates) ? controller.trackingStates : [];
+
+        trackingStates.forEach((state) => {
+          if (!state || !state.filter) return;
+          if (mode === 'ultra') {
+            state.filter.minCutOff = 0.0001;
+            state.filter.beta = 0.05;
+          } else if (mode === 'balanced') {
+            state.filter.minCutOff = 0.001;
+            state.filter.beta = 1.0;
+          } else {
+            state.filter.minCutOff = 0.01;
+            state.filter.beta = 100;
+          }
+        });
 
         if (mode === 'ultra') {
-          if (filter) {
-            filter.minCutOff = 0.0001;
-            filter.beta = 0.05;
-          }
           stabilityBadge.innerHTML = '<span>🛡️ Stabilizer: <strong>Ultra-Smooth</strong></span>';
         } else if (mode === 'balanced') {
-          if (filter) {
-            filter.minCutOff = 0.001;
-            filter.beta = 1.0;
-          }
           stabilityBadge.innerHTML = '<span>⚡ Stabilizer: <strong>Balanced</strong></span>';
         } else {
-          if (filter) {
-            filter.minCutOff = 0.01;
-            filter.beta = 100;
-          }
           stabilityBadge.innerHTML = '<span>💨 Stabilizer: <strong>Fast Dynamic</strong></span>';
         }
       }
