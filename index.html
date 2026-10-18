@@ -217,25 +217,36 @@
         box-shadow: 0 0 8px #22c55e;
       }
 
-      /* Mode Toggle for Stability */
-      #stability-badge {
+      /* Mode Toggles for Stability & Border Frame */
+      #bottom-controls {
         position: fixed;
         bottom: 24px;
         left: 20px;
         z-index: 1001;
-        background: rgba(15, 23, 42, 0.85);
-        color: #38bdf8;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .control-pill {
+        background: rgba(15, 23, 42, 0.88);
         border: 1px solid rgba(56, 189, 248, 0.3);
-        padding: 10px 16px;
+        padding: 9px 16px;
         border-radius: 999px;
         font-size: 12px;
         font-weight: 500;
-        backdrop-filter: blur(8px);
+        backdrop-filter: blur(10px);
         cursor: pointer;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
         display: flex;
         align-items: center;
         gap: 6px;
+        color: #38bdf8;
+        transition: all 0.2s ease;
+      }
+
+      .control-pill:active {
+        transform: scale(0.96);
       }
     </style>
 
@@ -357,9 +368,14 @@
       </div>
     </div>
 
-    <!-- Stability Toggle Badge -->
-    <div id="stability-badge" title="Click to toggle stability settings">
-      <span>🛡️ Stabilizer: <strong>Ultra-Smooth</strong></span>
+    <!-- Bottom Left Controls (Stability & Border Frame) -->
+    <div id="bottom-controls">
+      <div id="stability-badge" class="control-pill" title="Click to cycle stability modes">
+        <span>🛡️ Stabilizer: <strong>Ultra-Smooth</strong></span>
+      </div>
+      <div id="border-badge" class="control-pill" title="Click to cycle overlay border frame styles">
+        <span>🖼️ Border: <strong>Neon Cyan</strong></span>
+      </div>
     </div>
 
     <!-- Sound Toggle -->
@@ -367,12 +383,12 @@
 
     <!-- A-Frame WebAR Scene with MindAR Tracking
          Stabilization settings:
-         - filterMinCF: 0.0001 (removes high-frequency micro-tremor when holding still)
-         - filterBeta: 0.05 (suppresses erratic velocity spikes)
-         - missTolerance: 8 (prevents flickering if a camera frame is blurry)
+         - filterMinCF: 0.00008 (removes high-frequency micro-tremor when holding still)
+         - filterBeta: 0.03 (suppresses erratic velocity spikes)
+         - missTolerance: 10 (keeps overlay locked across temporary blurs/motion)
          - warmupTolerance: 2 (quick detection) -->
     <a-scene
-      mindar-image="imageTargetSrc: ./assets/targets.mind; filterMinCF: 0.0001; filterBeta: 0.05; warmupTolerance: 2; missTolerance: 8; autoStart: true;"
+      mindar-image="imageTargetSrc: ./assets/targets.mind; filterMinCF: 0.00008; filterBeta: 0.03; warmupTolerance: 2; missTolerance: 10; autoStart: true;"
       color-space="sRGB"
       renderer="colorManagement: true, physicallyCorrectLights: true, alpha: true"
       vr-mode-ui="enabled: false"
@@ -396,7 +412,7 @@
         <!-- Artwork 2 Video Overlay (Change src to your 2nd video, e.g. ./assets/video2.mp4) -->
         <video
           id="artwork-video-2"
-          src="./assets/my-video2.mp4"
+          src="./assets/my-video.mp4"
           preload="auto"
           loop
           playsinline
@@ -411,6 +427,15 @@
 
       <!-- Target Anchor 1: First Physical Artwork (targetIndex: 0) -->
       <a-entity id="target-anchor" mindar-image-target="targetIndex: 0">
+        <!-- Glowing Frame Border Plane Behind Video Plane -->
+        <a-plane
+          id="ar-video-border-1"
+          position="0 0 -0.005"
+          width="1.838"
+          height="1.06"
+          color="#38bdf8"
+          material="shader: flat; opacity: 0.95; transparent: true;"
+        ></a-plane>
         <a-video
           id="ar-video-plane"
           src="#artwork-video"
@@ -423,6 +448,15 @@
 
       <!-- Target Anchor 2: Second Physical Artwork (targetIndex: 1) -->
       <a-entity id="target-anchor-2" mindar-image-target="targetIndex: 1">
+        <!-- Glowing Frame Border Plane Behind Video Plane -->
+        <a-plane
+          id="ar-video-border-2"
+          position="0 0 -0.005"
+          width="1.838"
+          height="1.06"
+          color="#38bdf8"
+          material="shader: flat; opacity: 0.95; transparent: true;"
+        ></a-plane>
         <a-video
           id="ar-video-plane-2"
           src="#artwork-video-2"
@@ -438,10 +472,12 @@
       const video1 = document.getElementById('artwork-video');
       const targetAnchor1 = document.getElementById('target-anchor');
       const videoPlane1 = document.getElementById('ar-video-plane');
+      const border1 = document.getElementById('ar-video-border-1');
 
       const video2 = document.getElementById('artwork-video-2');
       const targetAnchor2 = document.getElementById('target-anchor-2');
       const videoPlane2 = document.getElementById('ar-video-plane-2');
+      const border2 = document.getElementById('ar-video-border-2');
 
       const loader = document.getElementById('ar-loader');
       const loaderStatus = document.getElementById('loader-status');
@@ -452,17 +488,24 @@
       const hud = document.getElementById('scanning-hud');
       const audioBadge = document.getElementById('audio-badge');
       const stabilityBadge = document.getElementById('stability-badge');
+      const borderBadge = document.getElementById('border-badge');
+      const bottomControls = document.getElementById('bottom-controls');
       const scene = document.querySelector('a-scene');
 
-      // Helper to auto-fit video planes to aspect ratio
-      function setupVideoAutoFit(videoEl, planeEl) {
+      // Helper to auto-fit video planes and border frames to aspect ratio
+      function setupVideoAutoFit(videoEl, planeEl, borderEl) {
         if (!videoEl || !planeEl) return;
         videoEl.addEventListener('loadedmetadata', () => {
           if (videoEl.videoWidth && videoEl.videoHeight) {
             const aspect = videoEl.videoWidth / videoEl.videoHeight;
             planeEl.setAttribute('width', aspect.toFixed(3));
             planeEl.setAttribute('height', '1');
-            console.log('[AR Engine] Video aspect ratio set:', aspect.toFixed(3));
+            if (borderEl) {
+              const borderPad = 0.06; // Elegant border frame margin
+              borderEl.setAttribute('width', (aspect + borderPad).toFixed(3));
+              borderEl.setAttribute('height', (1 + borderPad).toFixed(3));
+            }
+            console.log('[AR Engine] Video & border aspect ratio set:', aspect.toFixed(3));
           }
         });
 
@@ -476,8 +519,8 @@
         });
       }
 
-      setupVideoAutoFit(video1, videoPlane1);
-      setupVideoAutoFit(video2, videoPlane2);
+      setupVideoAutoFit(video1, videoPlane1, border1);
+      setupVideoAutoFit(video2, videoPlane2, border2);
 
       // Check HTTPS requirement
       if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
@@ -586,54 +629,121 @@
 
       // Tap screen to ensure audio playback is unmuted on first gesture
       window.addEventListener('click', (e) => {
-        if (e.target !== stabilityBadge && !stabilityBadge.contains(e.target)) {
-          if (isGlobalMuted) {
-            setMuteState(false);
-          }
+        if (bottomControls && bottomControls.contains(e.target)) return;
+        if (isGlobalMuted) {
+          setMuteState(false);
         }
       }, { once: true });
 
-      // Live Stabilizer Switcher (updates MindAR's 1EuroFilter for ALL targets)
-      let currentMode = 'ultra';
-      function applyStability(mode) {
-        currentMode = mode;
+      // --- BORDER FRAME CONTROLLER ---
+      const BORDER_STYLES = [
+        { id: 'cyan', label: 'Neon Cyan', color: '#38bdf8', opacity: 0.95, visible: true },
+        { id: 'white', label: 'Minimal White', color: '#ffffff', opacity: 0.95, visible: true },
+        { id: 'gold', label: 'Gallery Gold', color: '#eab308', opacity: 0.95, visible: true },
+        { id: 'violet', label: 'Electric Purple', color: '#c084fc', opacity: 0.95, visible: true },
+        { id: 'emerald', label: 'Tech Emerald', color: '#34d399', opacity: 0.95, visible: true },
+        { id: 'none', label: 'Frameless (Off)', color: '#64748b', opacity: 0, visible: false },
+      ];
+      let currentBorderIndex = 0;
+
+      function applyBorderStyle(idx) {
+        currentBorderIndex = idx % BORDER_STYLES.length;
+        const style = BORDER_STYLES[currentBorderIndex];
+
+        [border1, border2].forEach((b) => {
+          if (!b) return;
+          b.setAttribute('visible', style.visible ? 'true' : 'false');
+          if (style.visible) {
+            b.setAttribute('color', style.color);
+            b.setAttribute('material', `shader: flat; opacity: ${style.opacity}; transparent: true;`);
+          }
+        });
+
+        if (borderBadge) {
+          borderBadge.innerHTML = `<span>🖼️ Border: <strong>${style.label}</strong></span>`;
+          borderBadge.style.color = style.visible ? style.color : '#94a3b8';
+          borderBadge.style.borderColor = style.visible ? style.color : 'rgba(255,255,255,0.2)';
+        }
+      }
+
+      if (borderBadge) {
+        borderBadge.addEventListener('click', (e) => {
+          e.stopPropagation();
+          applyBorderStyle(currentBorderIndex + 1);
+        });
+      }
+
+      // --- ADVANCED 1-EURO FILTER STABILIZER PROFILES ---
+      const STABILITY_PROFILES = [
+        {
+          id: 'rock',
+          name: 'Rock-Solid (Max Lock)',
+          icon: '🔒',
+          minCutOff: 0.00003,
+          beta: 0.008,
+          color: '#38bdf8',
+          tip: 'Zero micro-tremor when holding still; maximum lock.'
+        },
+        {
+          id: 'ultra',
+          name: 'Ultra-Smooth (Default)',
+          icon: '🛡️',
+          minCutOff: 0.00008,
+          beta: 0.03,
+          color: '#2dd4bf',
+          tip: 'Natural smooth tracking for hand-held museum exploration.'
+        },
+        {
+          id: 'balanced',
+          name: 'Balanced Dynamic',
+          icon: '⚡',
+          minCutOff: 0.0008,
+          beta: 0.5,
+          color: '#f59e0b',
+          tip: 'Balanced responsiveness for faster movement.'
+        },
+        {
+          id: 'fast',
+          name: 'Fast Track',
+          icon: '💨',
+          minCutOff: 0.005,
+          beta: 15.0,
+          color: '#ec4899',
+          tip: 'Immediate instantaneous motion response.'
+        }
+      ];
+
+      let currentStabilityIndex = 1; // Default: Ultra-Smooth
+
+      function applyStabilityProfile(index) {
+        currentStabilityIndex = index % STABILITY_PROFILES.length;
+        const profile = STABILITY_PROFILES[currentStabilityIndex];
+
         const arSystem = scene ? scene.systems['mindar-image-system'] : null;
         const controller = arSystem ? arSystem.controller : null;
         const trackingStates = (controller && controller.trackingStates) ? controller.trackingStates : [];
 
         trackingStates.forEach((state) => {
           if (!state || !state.filter) return;
-          if (mode === 'ultra') {
-            state.filter.minCutOff = 0.0001;
-            state.filter.beta = 0.05;
-          } else if (mode === 'balanced') {
-            state.filter.minCutOff = 0.001;
-            state.filter.beta = 1.0;
-          } else {
-            state.filter.minCutOff = 0.01;
-            state.filter.beta = 100;
-          }
+          state.filter.minCutOff = profile.minCutOff;
+          state.filter.beta = profile.beta;
         });
 
-        if (mode === 'ultra') {
-          stabilityBadge.innerHTML = '<span>🛡️ Stabilizer: <strong>Ultra-Smooth</strong></span>';
-        } else if (mode === 'balanced') {
-          stabilityBadge.innerHTML = '<span>⚡ Stabilizer: <strong>Balanced</strong></span>';
-        } else {
-          stabilityBadge.innerHTML = '<span>💨 Stabilizer: <strong>Fast Dynamic</strong></span>';
+        if (stabilityBadge) {
+          stabilityBadge.innerHTML = `<span>${profile.icon} Stabilizer: <strong>${profile.name}</strong></span>`;
+          stabilityBadge.style.color = profile.color;
+          stabilityBadge.style.borderColor = profile.color;
+          stabilityBadge.title = profile.tip;
         }
+        console.log(`[AR Engine] Stabilizer updated to ${profile.name} (minCutOff: ${profile.minCutOff}, beta: ${profile.beta})`);
       }
 
-      stabilityBadge.addEventListener('click', (e) => {
-        e.stopPropagation();
-        if (currentMode === 'ultra') {
-          applyStability('balanced');
-        } else if (currentMode === 'balanced') {
-          applyStability('fast');
-        } else {
-          applyStability('ultra');
-        }
-      });
+      if (stabilityBadge) {
+        stabilityBadge.addEventListener('click', (e) => {
+          e.stopPropagation();
+          applyStabilityProfile(currentStabilityIndex + 1);
+        });
+      }
     </script>
   </body>
 </html>
