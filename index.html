@@ -128,7 +128,7 @@
         box-shadow: 0 4px 15px rgba(56, 189, 248, 0.35);
       }
 
-      /* Active Scanning Reticle */
+      /* Charismatic Holographic Reticle */
       #scanning-hud {
         position: fixed;
         inset: 0;
@@ -138,55 +138,85 @@
         align-items: center;
         justify-content: center;
         z-index: 1000;
-        transition: opacity 0.3s;
+        transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1);
       }
 
       #scanning-hud.hidden {
         opacity: 0;
+        pointer-events: none;
       }
 
       .hud-frame {
         position: relative;
-        width: 270px;
-        height: 270px;
-        border: 2px dashed rgba(56, 189, 248, 0.5);
-        border-radius: 18px;
+        width: min(300px, 78vw);
+        height: min(300px, 78vw);
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        box-shadow: 0 0 30px rgba(56, 189, 248, 0.15);
       }
+
+      /* 4 Tech Corner Brackets */
+      .hud-corner {
+        position: absolute;
+        width: 28px;
+        height: 28px;
+        border-color: #38bdf8;
+        border-style: solid;
+        pointer-events: none;
+        filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.8));
+      }
+      .hud-tl { top: 0; left: 0; border-width: 3px 0 0 3px; border-top-left-radius: 8px; }
+      .hud-tr { top: 0; right: 0; border-width: 3px 3px 0 0; border-top-right-radius: 8px; }
+      .hud-bl { bottom: 0; left: 0; border-width: 0 0 3px 3px; border-bottom-left-radius: 8px; }
+      .hud-br { bottom: 0; right: 0; border-width: 0 3px 3px 0; border-bottom-right-radius: 8px; }
+
+      /* Scanning Laser Beam */
+      .hud-laser {
+        position: absolute;
+        left: 8px;
+        right: 8px;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, #38bdf8 30%, #ffffff 50%, #38bdf8 70%, transparent);
+        box-shadow: 0 0 16px #38bdf8, 0 0 30px #38bdf8;
+        animation: laserScan 2.6s ease-in-out infinite;
+      }
+
+      @keyframes laserScan {
+        0%, 100% { top: 10%; opacity: 0.3; }
+        50% { top: 88%; opacity: 1; }
+      }
+
+      .hud-crosshair {
+        width: 14px;
+        height: 14px;
+        position: relative;
+        opacity: 0.7;
+      }
+      .hud-crosshair::before, .hud-crosshair::after {
+        content: '';
+        position: absolute;
+        background: #38bdf8;
+      }
+      .hud-crosshair::before { top: 6px; left: 0; width: 14px; height: 2px; }
+      .hud-crosshair::after { top: 0; left: 6px; width: 2px; height: 14px; }
 
       .hud-text {
-        font-size: 12px;
-        color: rgba(255, 255, 255, 0.9);
-        background: rgba(15, 23, 42, 0.75);
-        padding: 8px 16px;
-        border-radius: 999px;
-        margin-top: 18px;
-        backdrop-filter: blur(8px);
-        border: 1px solid rgba(255, 255, 255, 0.12);
-        letter-spacing: 0.3px;
-      }
-
-      /* Audio Status Badge */
-      #audio-badge {
-        position: fixed;
-        bottom: 24px;
-        right: 20px;
-        z-index: 1001;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1.2px;
+        color: #e0f2fe;
         background: rgba(15, 23, 42, 0.85);
-        color: #fff;
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        padding: 10px 18px;
+        padding: 8px 18px;
         border-radius: 999px;
-        font-size: 13px;
-        font-weight: 500;
-        backdrop-filter: blur(8px);
-        cursor: pointer;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-        transition: all 0.2s ease;
+        margin-top: 24px;
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(56, 189, 248, 0.3);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        gap: 8px;
       }
 
       /* Top Header Status */
@@ -198,14 +228,17 @@
         z-index: 1001;
         display: flex;
         align-items: center;
-        gap: 8px;
-        background: rgba(15, 23, 42, 0.75);
-        border: 1px solid rgba(255, 255, 255, 0.15);
-        padding: 6px 14px;
+        gap: 10px;
+        background: rgba(15, 23, 42, 0.82);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        padding: 8px 18px;
         border-radius: 999px;
-        backdrop-filter: blur(8px);
-        color: #e2e8f0;
+        backdrop-filter: blur(12px);
+        color: #f1f5f9;
         font-size: 12px;
+        font-weight: 500;
+        letter-spacing: 0.4px;
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.45);
         pointer-events: none;
       }
 
@@ -214,7 +247,13 @@
         height: 8px;
         border-radius: 50%;
         background: #22c55e;
-        box-shadow: 0 0 8px #22c55e;
+        box-shadow: 0 0 10px #22c55e;
+        animation: pulseDot 2s infinite;
+      }
+
+      @keyframes pulseDot {
+        0%, 100% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.3); opacity: 0.7; }
       }
 
       /* Mode Toggles for Stability & Border Frame */
@@ -247,6 +286,257 @@
 
       .control-pill:active {
         transform: scale(0.96);
+      }
+
+      /* Audio Status Badge */
+      #audio-badge {
+        position: fixed;
+        bottom: 24px;
+        right: 20px;
+        z-index: 1001;
+        background: rgba(15, 23, 42, 0.88);
+        color: #fff;
+        border: 1px solid rgba(255, 255, 255, 0.22);
+        padding: 9px 18px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 600;
+        backdrop-filter: blur(10px);
+        cursor: pointer;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      #audio-badge:active {
+        transform: scale(0.96);
+      }
+
+      /* Charismatic Exhibition Spotlight Card (Slides up when target detected) */
+      #artwork-spotlight-card {
+        position: fixed;
+        bottom: 22px;
+        left: 50%;
+        transform: translateX(-50%) translateY(0);
+        width: min(390px, 92vw);
+        background: rgba(10, 16, 30, 0.92);
+        border: 1px solid rgba(56, 189, 248, 0.35);
+        border-radius: 20px;
+        padding: 14px 18px;
+        z-index: 1002;
+        backdrop-filter: blur(16px);
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 24px rgba(56, 189, 248, 0.2);
+        transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease;
+      }
+
+      #artwork-spotlight-card.hidden {
+        transform: translateX(-50%) translateY(120%);
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .spotlight-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 8px;
+      }
+
+      .spotlight-tag {
+        font-size: 10px;
+        font-family: monospace;
+        text-transform: uppercase;
+        letter-spacing: 1.2px;
+        color: #38bdf8;
+        background: rgba(56, 189, 248, 0.15);
+        border: 1px solid rgba(56, 189, 248, 0.3);
+        padding: 3px 10px;
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-weight: 700;
+      }
+
+      .spotlight-pulse {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #38bdf8;
+        box-shadow: 0 0 8px #38bdf8;
+        animation: pulseDot 1.4s infinite;
+      }
+
+      .spotlight-body {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+
+      .spotlight-info h3 {
+        margin: 0 0 3px 0;
+        font-size: 15px;
+        font-weight: 700;
+        color: #ffffff;
+        letter-spacing: 0.2px;
+      }
+
+      .spotlight-info p {
+        margin: 0;
+        font-size: 12px;
+        color: #94a3b8;
+      }
+
+      /* Audio Equalizer dancing wave */
+      .audio-wave {
+        display: flex;
+        align-items: flex-end;
+        gap: 3px;
+        height: 20px;
+        padding-right: 4px;
+      }
+
+      .audio-wave .bar {
+        width: 3.5px;
+        border-radius: 999px;
+        background: linear-gradient(180deg, #38bdf8, #2dd4bf);
+        animation: eqWave 0.9s ease-in-out infinite alternate;
+      }
+
+      .audio-wave .bar-1 { height: 60%; animation-delay: 0.1s; }
+      .audio-wave .bar-2 { height: 100%; animation-delay: 0.3s; }
+      .audio-wave .bar-3 { height: 40%; animation-delay: 0.5s; }
+      .audio-wave .bar-4 { height: 80%; animation-delay: 0.2s; }
+
+      .audio-wave.paused .bar {
+        animation-play-state: paused;
+        height: 25% !important;
+        opacity: 0.5;
+      }
+
+      @keyframes eqWave {
+        0% { height: 25%; }
+        100% { height: 100%; }
+      }
+
+      .spotlight-actions {
+        display: flex;
+        gap: 8px;
+      }
+
+      .spotlight-action-btn {
+        flex: 1;
+        padding: 8px 12px;
+        border-radius: 10px;
+        font-size: 12px;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        transition: all 0.2s;
+      }
+
+      .spotlight-action-btn.primary {
+        background: linear-gradient(135deg, #38bdf8 0%, #2dd4bf 100%);
+        color: #04121d;
+        box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
+      }
+
+      .spotlight-action-btn.secondary {
+        background: rgba(255, 255, 255, 0.08);
+        color: #f1f5f9;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+      }
+
+      .spotlight-action-btn:active {
+        transform: scale(0.97);
+      }
+
+      /* Curator Story Modal */
+      #story-modal {
+        position: fixed;
+        inset: 0;
+        z-index: 10000;
+        background: rgba(2, 6, 23, 0.85);
+        backdrop-filter: blur(14px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+      }
+
+      #story-modal.active {
+        opacity: 1;
+        visibility: visible;
+      }
+
+      .story-card {
+        background: #0f172a;
+        border: 1px solid rgba(56, 189, 248, 0.3);
+        border-radius: 20px;
+        padding: 24px;
+        max-width: 440px;
+        width: 100%;
+        color: #f8fafc;
+        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.8);
+      }
+
+      .story-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 14px;
+      }
+
+      .story-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #fff;
+        margin: 0;
+      }
+
+      .story-close {
+        background: rgba(255, 255, 255, 0.1);
+        border: none;
+        color: #cbd5e1;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        cursor: pointer;
+        font-size: 14px;
+      }
+
+      .story-text {
+        font-size: 13px;
+        line-height: 1.6;
+        color: #cbd5e1;
+        margin-bottom: 20px;
+      }
+
+      /* Camera Shutter Flash Effect */
+      #shutter-flash {
+        position: fixed;
+        inset: 0;
+        background: #ffffff;
+        z-index: 999999;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.25s ease-out;
+      }
+
+      #shutter-flash.flashing {
+        opacity: 0.9;
+        transition: none;
       }
     </style>
 
@@ -345,10 +635,13 @@
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
   </head>
   <body>
+    <!-- Camera Shutter Flash Effect -->
+    <div id="shutter-flash"></div>
+
     <!-- Top Header Status -->
     <div id="top-header">
       <div class="status-dot"></div>
-      <span>AR Artwork Tracker</span>
+      <span id="header-label">🏛️ LIVING CANVAS • 60 FPS AR</span>
     </div>
 
     <!-- Visual Loading Screen -->
@@ -360,11 +653,19 @@
       <button class="action-btn" id="error-action">Allow Camera & Start</button>
     </div>
 
-    <!-- Active Scanning Reticle -->
+    <!-- Charismatic Holographic Reticle -->
     <div id="scanning-hud">
       <div class="hud-frame">
-        <div style="font-size: 32px; margin-bottom: 8px;">📷</div>
-        <div class="hud-text">Point camera at the artwork</div>
+        <div class="hud-corner hud-tl"></div>
+        <div class="hud-corner hud-tr"></div>
+        <div class="hud-corner hud-bl"></div>
+        <div class="hud-corner hud-br"></div>
+        <div class="hud-laser"></div>
+        <div class="hud-crosshair"></div>
+      </div>
+      <div class="hud-text">
+        <span style="font-size: 14px;">✦</span>
+        <span>Align Artwork in Viewfinder</span>
       </div>
     </div>
 
@@ -381,12 +682,56 @@
     <!-- Sound Toggle -->
     <div id="audio-badge">🔈 Sound Muted (Tap for Sound)</div>
 
-    <!-- A-Frame WebAR Scene with MindAR Tracking
-         Stabilization settings:
-         - filterMinCF: 0.00008 (removes high-frequency micro-tremor when holding still)
-         - filterBeta: 0.03 (suppresses erratic velocity spikes)
-         - missTolerance: 10 (keeps overlay locked across temporary blurs/motion)
-         - warmupTolerance: 2 (quick detection) -->
+    <!-- Active Exhibition Spotlight Card (Slides up on target detection) -->
+    <div id="artwork-spotlight-card" class="hidden">
+      <div class="spotlight-header">
+        <div class="spotlight-tag">
+          <span class="spotlight-pulse"></span>
+          <span id="spotlight-target-num">EXHIBIT #01 ACTIVE</span>
+        </div>
+        <button id="spotlight-close" class="story-close" style="width:24px;height:24px;font-size:11px;" title="Dismiss bar">✕</button>
+      </div>
+
+      <div class="spotlight-body">
+        <div class="spotlight-info">
+          <h3 id="spotlight-title">Living Canvas I</h3>
+          <p id="spotlight-desc">Spatial Video & Audio Synchronization</p>
+        </div>
+
+        <!-- Audio Equalizer dancing wave -->
+        <div id="audio-wave" class="audio-wave paused" title="Audio Activity">
+          <div class="bar bar-1"></div>
+          <div class="bar bar-2"></div>
+          <div class="bar bar-3"></div>
+          <div class="bar bar-4"></div>
+        </div>
+      </div>
+
+      <div class="spotlight-actions">
+        <button id="btn-snapshot" class="spotlight-action-btn primary" title="Take a photo with the AR artwork">
+          <span>📸 Capture AR</span>
+        </button>
+        <button id="btn-curator-story" class="spotlight-action-btn secondary" title="Curator Notes">
+          <span>📖 Story</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Curator Story Modal -->
+    <div id="story-modal">
+      <div class="story-card">
+        <div class="story-header">
+          <h3 class="story-title" id="modal-art-title">Living Canvas: Curatorial Note</h3>
+          <button id="story-close" class="story-close">✕</button>
+        </div>
+        <p class="story-text" id="modal-art-body">
+          This installation blends traditional 2D physical media with client-side WebAR. By tracking micro-features in real time, the camera overlays dynamic 60 FPS motion and spatial audio, turning a static print into an unfolding cinematic memory.
+        </p>
+        <button id="modal-ack-btn" class="spotlight-action-btn primary" style="width: 100%;">Return to AR Experience</button>
+      </div>
+    </div>
+
+    <!-- A-Frame WebAR Scene with MindAR Tracking -->
     <a-scene
       mindar-image="imageTargetSrc: ./assets/targets.mind; filterMinCF: 0.00008; filterBeta: 0.03; warmupTolerance: 2; missTolerance: 10; autoStart: true;"
       color-space="sRGB"
@@ -412,7 +757,20 @@
         <!-- Artwork 2 Video Overlay (Change src to your 2nd video, e.g. ./assets/video2.mp4) -->
         <video
           id="artwork-video-2"
-          src="./assets/my-video2.mp4"
+          src="./assets/my-video.mp4"
+          preload="auto"
+          loop
+          playsinline
+          webkit-playsinline
+          x5-playsinline
+          muted
+          crossorigin="anonymous"
+        ></video>
+
+        <!-- Artwork 3 Video Overlay (Change src to your 3rd video, e.g. ./assets/video3.mp4) -->
+        <video
+          id="artwork-video-3"
+          src="./assets/my-video.mp4"
           preload="auto"
           loop
           playsinline
@@ -427,7 +785,17 @@
 
       <!-- Target Anchor 1: First Physical Artwork (targetIndex: 0) -->
       <a-entity id="target-anchor" mindar-image-target="targetIndex: 0">
-        <!-- Glowing Frame Border Plane Behind Video Plane -->
+        <!-- 1. Ambient Wall Drop Shadow (creates genuine physical lift off the canvas) -->
+        <a-plane
+          id="ar-shadow-1"
+          position="0 -0.04 -0.015"
+          width="1.95"
+          height="1.18"
+          color="#000000"
+          material="shader: flat; opacity: 0.45; transparent: true;"
+        ></a-plane>
+
+        <!-- 2. Outer Beveled Border Frame -->
         <a-plane
           id="ar-video-border-1"
           position="0 0 -0.005"
@@ -436,19 +804,82 @@
           color="#38bdf8"
           material="shader: flat; opacity: 0.95; transparent: true;"
         ></a-plane>
+
+        <!-- 3. Living Canvas Video Plane -->
         <a-video
           id="ar-video-plane"
           src="#artwork-video"
-          position="0 0 0"
+          position="0 0 0.002"
           height="1"
           width="1.778"
           rotation="0 0 0"
         ></a-video>
+
+        <!-- 4. Floating 3D Museum Plaque (Hovers with gentle levitation) -->
+        <a-entity
+          id="ar-plaque-1"
+          position="0 -0.66 0.05"
+          animation="property: position; to: 0 -0.63 0.05; dir: alternate; dur: 2400; loop: true; easing: easeInOutSine;"
+        >
+          <!-- Plaque Translucent Acrylic Glass Backing -->
+          <a-plane position="0 0 0" width="1.3" height="0.22" color="#040914" material="shader: flat; opacity: 0.9; transparent: true;"></a-plane>
+          <!-- Glowing Accent Line -->
+          <a-plane position="0 0.1 0.002" width="1.26" height="0.012" color="#38bdf8" material="shader: flat;"></a-plane>
+          <!-- Plaque Title Text -->
+          <a-text
+            value="LIVING CANVAS  *  EXHIBIT I"
+            align="center"
+            position="0 0.035 0.005"
+            width="2.2"
+            color="#ffffff"
+          ></a-text>
+          <!-- Plaque Subtitle Text -->
+          <a-text
+            value="SPATIAL AUDIO SYNC  *  IMMERSIVE AR"
+            align="center"
+            position="0 -0.045 0.005"
+            width="1.5"
+            color="#38bdf8"
+          ></a-text>
+        </a-entity>
+
+        <!-- 5. Floating Ambient Light Sparkles (3D Depth Motes) -->
+        <a-sphere
+          position="-0.95 0.45 0.08"
+          radius="0.02"
+          color="#38bdf8"
+          material="shader: flat; opacity: 0.8; transparent: true;"
+          animation="property: position; to: -0.92 0.50 0.14; dir: alternate; dur: 2800; loop: true; easing: easeInOutSine;"
+        ></a-sphere>
+        <a-sphere
+          position="0.95 -0.4 0.07"
+          radius="0.018"
+          color="#2dd4bf"
+          material="shader: flat; opacity: 0.8; transparent: true;"
+          animation="property: position; to: 0.98 -0.36 0.12; dir: alternate; dur: 3200; loop: true; easing: easeInOutSine;"
+        ></a-sphere>
+        <a-sphere
+          position="-0.7 -0.52 0.05"
+          radius="0.015"
+          color="#38bdf8"
+          material="shader: flat; opacity: 0.6; transparent: true;"
+          animation="property: position; to: -0.66 -0.48 0.09; dir: alternate; dur: 2200; loop: true; easing: easeInOutSine;"
+        ></a-sphere>
       </a-entity>
 
       <!-- Target Anchor 2: Second Physical Artwork (targetIndex: 1) -->
       <a-entity id="target-anchor-2" mindar-image-target="targetIndex: 1">
-        <!-- Glowing Frame Border Plane Behind Video Plane -->
+        <!-- 1. Ambient Wall Drop Shadow -->
+        <a-plane
+          id="ar-shadow-2"
+          position="0 -0.04 -0.015"
+          width="1.95"
+          height="1.18"
+          color="#000000"
+          material="shader: flat; opacity: 0.45; transparent: true;"
+        ></a-plane>
+
+        <!-- 2. Outer Beveled Border Frame -->
         <a-plane
           id="ar-video-border-2"
           position="0 0 -0.005"
@@ -457,14 +888,129 @@
           color="#38bdf8"
           material="shader: flat; opacity: 0.95; transparent: true;"
         ></a-plane>
+
+        <!-- 3. Living Canvas Video Plane -->
         <a-video
           id="ar-video-plane-2"
           src="#artwork-video-2"
-          position="0 0 0"
+          position="0 0 0.002"
           height="1"
           width="1.778"
           rotation="0 0 0"
         ></a-video>
+
+        <!-- 4. Floating 3D Museum Plaque -->
+        <a-entity
+          id="ar-plaque-2"
+          position="0 -0.66 0.05"
+          animation="property: position; to: 0 -0.63 0.05; dir: alternate; dur: 2400; loop: true; easing: easeInOutSine;"
+        >
+          <a-plane position="0 0 0" width="1.3" height="0.22" color="#040914" material="shader: flat; opacity: 0.9; transparent: true;"></a-plane>
+          <a-plane position="0 0.1 0.002" width="1.26" height="0.012" color="#2dd4bf" material="shader: flat;"></a-plane>
+          <a-text
+            value="LIVING CANVAS  *  EXHIBIT II"
+            align="center"
+            position="0 0.035 0.005"
+            width="2.2"
+            color="#ffffff"
+          ></a-text>
+          <a-text
+            value="SPATIAL AUDIO SYNC  *  IMMERSIVE AR"
+            align="center"
+            position="0 -0.045 0.005"
+            width="1.5"
+            color="#2dd4bf"
+          ></a-text>
+        </a-entity>
+
+        <!-- 5. Floating Ambient Light Sparkles -->
+        <a-sphere
+          position="-0.95 0.45 0.08"
+          radius="0.02"
+          color="#2dd4bf"
+          material="shader: flat; opacity: 0.8; transparent: true;"
+          animation="property: position; to: -0.92 0.50 0.14; dir: alternate; dur: 2800; loop: true; easing: easeInOutSine;"
+        ></a-sphere>
+        <a-sphere
+          position="0.95 -0.4 0.07"
+          radius="0.018"
+          color="#38bdf8"
+          material="shader: flat; opacity: 0.8; transparent: true;"
+          animation="property: position; to: 0.98 -0.36 0.12; dir: alternate; dur: 3200; loop: true; easing: easeInOutSine;"
+        ></a-sphere>
+      </a-entity>
+
+      <!-- Target Anchor 3: Third Physical Artwork (targetIndex: 2) -->
+      <a-entity id="target-anchor-3" mindar-image-target="targetIndex: 2">
+        <!-- 1. Ambient Wall Drop Shadow -->
+        <a-plane
+          id="ar-shadow-3"
+          position="0 -0.04 -0.015"
+          width="1.95"
+          height="1.18"
+          color="#000000"
+          material="shader: flat; opacity: 0.45; transparent: true;"
+        ></a-plane>
+
+        <!-- 2. Outer Beveled Border Frame -->
+        <a-plane
+          id="ar-video-border-3"
+          position="0 0 -0.005"
+          width="1.838"
+          height="1.06"
+          color="#38bdf8"
+          material="shader: flat; opacity: 0.95; transparent: true;"
+        ></a-plane>
+
+        <!-- 3. Living Canvas Video Plane -->
+        <a-video
+          id="ar-video-plane-3"
+          src="#artwork-video-3"
+          position="0 0 0.002"
+          height="1"
+          width="1.778"
+          rotation="0 0 0"
+        ></a-video>
+
+        <!-- 4. Floating 3D Museum Plaque -->
+        <a-entity
+          id="ar-plaque-3"
+          position="0 -0.66 0.05"
+          animation="property: position; to: 0 -0.63 0.05; dir: alternate; dur: 2400; loop: true; easing: easeInOutSine;"
+        >
+          <a-plane position="0 0 0" width="1.3" height="0.22" color="#040914" material="shader: flat; opacity: 0.9; transparent: true;"></a-plane>
+          <a-plane position="0 0.1 0.002" width="1.26" height="0.012" color="#eab308" material="shader: flat;"></a-plane>
+          <a-text
+            value="LIVING CANVAS  *  EXHIBIT III"
+            align="center"
+            position="0 0.035 0.005"
+            width="2.2"
+            color="#ffffff"
+          ></a-text>
+          <a-text
+            value="SPATIAL AUDIO SYNC  *  IMMERSIVE AR"
+            align="center"
+            position="0 -0.045 0.005"
+            width="1.5"
+            color="#eab308"
+          ></a-text>
+        </a-entity>
+
+        <!-- 5. Floating Ambient Light Sparkles -->
+        <a-sphere
+          position="-0.95 0.45 0.08"
+          radius="0.02"
+          color="#eab308"
+          material="shader: flat; opacity: 0.8; transparent: true;"
+          animation="property: position; to: -0.92 0.50 0.14; dir: alternate; dur: 2800; loop: true; easing: easeInOutSine;"
+        ></a-sphere>
+        <a-sphere
+          position="0.95 -0.4 0.07"
+          radius="0.018"
+          color="#38bdf8"
+          material="shader: flat; opacity: 0.8; transparent: true;"
+          animation="property: position; to: 0.98 -0.36 0.12; dir: alternate; dur: 3200; loop: true; easing: easeInOutSine;"
+        ></a-sphere>
       </a-entity>
     </a-scene>
 
@@ -473,11 +1019,19 @@
       const targetAnchor1 = document.getElementById('target-anchor');
       const videoPlane1 = document.getElementById('ar-video-plane');
       const border1 = document.getElementById('ar-video-border-1');
+      const shadow1 = document.getElementById('ar-shadow-1');
 
       const video2 = document.getElementById('artwork-video-2');
       const targetAnchor2 = document.getElementById('target-anchor-2');
       const videoPlane2 = document.getElementById('ar-video-plane-2');
       const border2 = document.getElementById('ar-video-border-2');
+      const shadow2 = document.getElementById('ar-shadow-2');
+
+      const video3 = document.getElementById('artwork-video-3');
+      const targetAnchor3 = document.getElementById('target-anchor-3');
+      const videoPlane3 = document.getElementById('ar-video-plane-3');
+      const border3 = document.getElementById('ar-video-border-3');
+      const shadow3 = document.getElementById('ar-shadow-3');
 
       const loader = document.getElementById('ar-loader');
       const loaderStatus = document.getElementById('loader-status');
@@ -490,10 +1044,49 @@
       const stabilityBadge = document.getElementById('stability-badge');
       const borderBadge = document.getElementById('border-badge');
       const bottomControls = document.getElementById('bottom-controls');
+      const headerLabel = document.getElementById('header-label');
+      const shutterFlash = document.getElementById('shutter-flash');
+      const spotlightCard = document.getElementById('artwork-spotlight-card');
+      const spotlightClose = document.getElementById('spotlight-close');
+      const spotlightTargetNum = document.getElementById('spotlight-target-num');
+      const spotlightTitle = document.getElementById('spotlight-title');
+      const spotlightDesc = document.getElementById('spotlight-desc');
+      const audioWave = document.getElementById('audio-wave');
+      const btnSnapshot = document.getElementById('btn-snapshot');
+      const btnCuratorStory = document.getElementById('btn-curator-story');
+      const storyModal = document.getElementById('story-modal');
+      const storyClose = document.getElementById('story-close');
+      const modalAckBtn = document.getElementById('modal-ack-btn');
+      const modalArtTitle = document.getElementById('modal-art-title');
+      const modalArtBody = document.getElementById('modal-art-body');
       const scene = document.querySelector('a-scene');
 
-      // Helper to auto-fit video planes and border frames to aspect ratio
-      function setupVideoAutoFit(videoEl, planeEl, borderEl) {
+      // Curatorial stories for exhibits
+      const EXHIBIT_DATA = [
+        {
+          num: 'EXHIBIT #01 ACTIVE',
+          title: 'Living Canvas I: Sacred Pathways',
+          desc: 'Vermilion Torii & Ancient Whispers',
+          story: 'Layering physical pigment with a 60 FPS temporal video loop. The vermilion torii gate of Kyoto acts as a threshold between ancient history and computational art. Ambient forest audio and spatial acoustics adapt dynamically to your viewing distance.'
+        },
+        {
+          num: 'EXHIBIT #02 ACTIVE',
+          title: 'Living Canvas II: Lunar Frontiers',
+          desc: 'Apollo Odyssey & Sea of Tranquility',
+          story: 'Transcending archival photography. The monochrome moondust and stark black horizon expand outward into dynamic particle space, syncing radio telemetry chatter with real-world 6DoF camera pose homography.'
+        },
+        {
+          num: 'EXHIBIT #03 ACTIVE',
+          title: 'Living Canvas III: Parisian Reverie',
+          desc: 'Cobblestone Reflections & Warm Zinc Cafés',
+          story: 'A tribute to the nostalgic warm glow of European streetlights. As your camera glides over the photograph, rain reflections and café chatter emerge in 3D parallax, turning a static print into a living window.'
+        }
+      ];
+
+      let currentActiveIndex = 0;
+
+      // Helper to auto-fit video planes, border frames, and shadow planes to aspect ratio
+      function setupVideoAutoFit(videoEl, planeEl, borderEl, shadowEl) {
         if (!videoEl || !planeEl) return;
         videoEl.addEventListener('loadedmetadata', () => {
           if (videoEl.videoWidth && videoEl.videoHeight) {
@@ -501,11 +1094,16 @@
             planeEl.setAttribute('width', aspect.toFixed(3));
             planeEl.setAttribute('height', '1');
             if (borderEl) {
-              const borderPad = 0.06; // Elegant border frame margin
+              const borderPad = 0.06;
               borderEl.setAttribute('width', (aspect + borderPad).toFixed(3));
               borderEl.setAttribute('height', (1 + borderPad).toFixed(3));
             }
-            console.log('[AR Engine] Video & border aspect ratio set:', aspect.toFixed(3));
+            if (shadowEl) {
+              const shadowPad = 0.22;
+              shadowEl.setAttribute('width', (aspect + shadowPad).toFixed(3));
+              shadowEl.setAttribute('height', (1 + shadowPad).toFixed(3));
+            }
+            console.log('[AR Engine] Video, border & shadow aspect ratio set:', aspect.toFixed(3));
           }
         });
 
@@ -519,8 +1117,9 @@
         });
       }
 
-      setupVideoAutoFit(video1, videoPlane1, border1);
-      setupVideoAutoFit(video2, videoPlane2, border2);
+      setupVideoAutoFit(video1, videoPlane1, border1, shadow1);
+      setupVideoAutoFit(video2, videoPlane2, border2, shadow2);
+      setupVideoAutoFit(video3, videoPlane3, border3, shadow3);
 
       // Check HTTPS requirement
       if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
@@ -537,7 +1136,7 @@
       scene.addEventListener('arReady', () => {
         console.log('[AR Engine] arReady event fired!');
         document.body.style.background = 'transparent';
-        if (loaderStatus) loaderStatus.innerText = '✓ Camera & Tracker ready!';
+        if (loaderStatus) loaderStatus.innerText = '✓ Camera & 3D Spatial Engine Ready';
         setTimeout(() => {
           if (loader) loader.classList.add('loaded');
         }, 300);
@@ -566,6 +1165,19 @@
 
       let activeTargetCount = 0;
 
+      function updateSpotlight(index) {
+        currentActiveIndex = index;
+        const data = EXHIBIT_DATA[index];
+        if (spotlightTargetNum) spotlightTargetNum.innerText = data.num;
+        if (spotlightTitle) spotlightTitle.innerText = data.title;
+        if (spotlightDesc) spotlightDesc.innerText = data.desc;
+        if (spotlightCard) spotlightCard.classList.remove('hidden');
+        if (headerLabel) headerLabel.innerText = `● ${data.title.split(':')[0]} LOCKED`;
+        if (navigator.vibrate) {
+          navigator.vibrate([40, 25, 45]);
+        }
+      }
+
       // Bind Artwork 1 Events
       if (targetAnchor1) {
         targetAnchor1.addEventListener('targetFound', () => {
@@ -573,13 +1185,19 @@
           activeTargetCount++;
           if (hud) hud.classList.add('hidden');
           if (video2) video2.pause();
+          if (video3) video3.pause();
           video1.play().catch(e => console.warn('Video 1 play error:', e));
+          updateSpotlight(0);
         });
 
         targetAnchor1.addEventListener('targetLost', () => {
           console.log('[AR Engine] Artwork 1 lost.');
           activeTargetCount = Math.max(0, activeTargetCount - 1);
-          if (activeTargetCount === 0 && hud) hud.classList.remove('hidden');
+          if (activeTargetCount === 0) {
+            if (hud) hud.classList.remove('hidden');
+            if (spotlightCard) spotlightCard.classList.add('hidden');
+            if (headerLabel) headerLabel.innerText = '🏛️ LIVING CANVAS • 60 FPS AR';
+          }
           video1.pause();
         });
       }
@@ -591,14 +1209,102 @@
           activeTargetCount++;
           if (hud) hud.classList.add('hidden');
           if (video1) video1.pause();
+          if (video3) video3.pause();
           video2.play().catch(e => console.warn('Video 2 play error:', e));
+          updateSpotlight(1);
         });
 
         targetAnchor2.addEventListener('targetLost', () => {
           console.log('[AR Engine] Artwork 2 lost.');
           activeTargetCount = Math.max(0, activeTargetCount - 1);
-          if (activeTargetCount === 0 && hud) hud.classList.remove('hidden');
+          if (activeTargetCount === 0) {
+            if (hud) hud.classList.remove('hidden');
+            if (spotlightCard) spotlightCard.classList.add('hidden');
+            if (headerLabel) headerLabel.innerText = '🏛️ LIVING CANVAS • 60 FPS AR';
+          }
           video2.pause();
+        });
+      }
+
+      // Bind Artwork 3 Events
+      if (targetAnchor3) {
+        targetAnchor3.addEventListener('targetFound', () => {
+          console.log('[AR Engine] Artwork 3 detected!');
+          activeTargetCount++;
+          if (hud) hud.classList.add('hidden');
+          if (video1) video1.pause();
+          if (video2) video2.pause();
+          video3.play().catch(e => console.warn('Video 3 play error:', e));
+          updateSpotlight(2);
+        });
+
+        targetAnchor3.addEventListener('targetLost', () => {
+          console.log('[AR Engine] Artwork 3 lost.');
+          activeTargetCount = Math.max(0, activeTargetCount - 1);
+          if (activeTargetCount === 0) {
+            if (hud) hud.classList.remove('hidden');
+            if (spotlightCard) spotlightCard.classList.add('hidden');
+            if (headerLabel) headerLabel.innerText = '🏛️ LIVING CANVAS • 60 FPS AR';
+          }
+          video3.pause();
+        });
+      }
+
+      // Dismiss spotlight bar button
+      if (spotlightClose) {
+        spotlightClose.addEventListener('click', (e) => {
+          e.stopPropagation();
+          spotlightCard.classList.add('hidden');
+        });
+      }
+
+      // Curator Story Modal Open / Close
+      if (btnCuratorStory) {
+        btnCuratorStory.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const data = EXHIBIT_DATA[currentActiveIndex];
+          if (modalArtTitle) modalArtTitle.innerText = data.title;
+          if (modalArtBody) modalArtBody.innerText = data.story;
+          storyModal.classList.add('active');
+        });
+      }
+
+      const closeStory = (e) => {
+        if (e) e.stopPropagation();
+        storyModal.classList.remove('active');
+      };
+
+      if (storyClose) storyClose.addEventListener('click', closeStory);
+      if (modalAckBtn) modalAckBtn.addEventListener('click', closeStory);
+      if (storyModal) {
+        storyModal.addEventListener('click', (e) => {
+          if (e.target === storyModal) closeStory();
+        });
+      }
+
+      // Snapshot / AR Camera Shutter Capture
+      if (btnSnapshot) {
+        btnSnapshot.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (shutterFlash) {
+            shutterFlash.classList.add('flashing');
+            setTimeout(() => shutterFlash.classList.remove('flashing'), 300);
+          }
+          if (navigator.vibrate) navigator.vibrate(60);
+
+          // Render canvas screenshot of A-Frame WebGL canvas
+          try {
+            const afCanvas = scene.querySelector('canvas.a-canvas');
+            if (afCanvas) {
+              const dataUrl = afCanvas.toDataURL('image/png');
+              const link = document.createElement('a');
+              link.download = `ar-exhibit-${currentActiveIndex + 1}-capture.png`;
+              link.href = dataUrl;
+              link.click();
+            }
+          } catch (snapErr) {
+            console.warn('Snapshot download notice:', snapErr);
+          }
         });
       }
 
@@ -608,6 +1314,11 @@
         isGlobalMuted = muted;
         if (video1) video1.muted = muted;
         if (video2) video2.muted = muted;
+        if (video3) video3.muted = muted;
+
+        if (audioWave) {
+          audioWave.classList.toggle('paused', muted);
+        }
 
         if (muted) {
           audioBadge.innerText = '🔈 Sound Muted (Tap for Sound)';
@@ -630,6 +1341,8 @@
       // Tap screen to ensure audio playback is unmuted on first gesture
       window.addEventListener('click', (e) => {
         if (bottomControls && bottomControls.contains(e.target)) return;
+        if (spotlightCard && spotlightCard.contains(e.target)) return;
+        if (storyModal && storyModal.contains(e.target)) return;
         if (isGlobalMuted) {
           setMuteState(false);
         }
@@ -650,7 +1363,7 @@
         currentBorderIndex = idx % BORDER_STYLES.length;
         const style = BORDER_STYLES[currentBorderIndex];
 
-        [border1, border2].forEach((b) => {
+        [border1, border2, border3].forEach((b) => {
           if (!b) return;
           b.setAttribute('visible', style.visible ? 'true' : 'false');
           if (style.visible) {
