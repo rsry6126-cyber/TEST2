@@ -3,9 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <title>Living Canvas • 60 FPS WebAR Experience</title>
+    <title>WebAR Artwork Experience</title>
 
-    <!-- Pre-load Camera Safe Fallback for Desktop & Incompatible Cameras -->
+    <!-- Safe Camera Fallback for Laptops/Desktops without Rear Camera -->
     <script>
       (function() {
         if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
@@ -15,7 +15,6 @@
               return await originalGUM(constraints);
             } catch (err) {
               console.warn('[AR Camera] Primary constraint failed, attempting generic video fallback:', err);
-              // Fallback for laptops/desktops without rear environment cameras
               return await originalGUM({ audio: false, video: true });
             }
           };
@@ -100,11 +99,11 @@
       }
 
       .spinner-ring {
-        width: 60px;
-        height: 60px;
+        width: 56px;
+        height: 56px;
         border: 3px solid rgba(255, 255, 255, 0.12);
-        border-top-color: #38bdf8;
-        border-right-color: #2dd4bf;
+        border-top-color: #ffffff;
+        border-right-color: #38bdf8;
         border-radius: 50%;
         animation: spin 1s cubic-bezier(0.55, 0.15, 0.45, 0.85) infinite;
         margin-bottom: 20px;
@@ -137,12 +136,12 @@
         border: 1px solid rgba(255, 255, 255, 0.15);
         border-radius: 999px;
         padding: 6px 16px;
-        color: #38bdf8;
+        color: #f1f5f9;
         margin-bottom: 16px;
       }
 
       .btn-start {
-        background: linear-gradient(135deg, #38bdf8 0%, #2dd4bf 100%);
+        background: #ffffff;
         color: #04121d;
         font-size: 15px;
         font-weight: 700;
@@ -150,7 +149,7 @@
         border-radius: 999px;
         border: none;
         cursor: pointer;
-        box-shadow: 0 4px 20px rgba(56, 189, 248, 0.4);
+        box-shadow: 0 4px 20px rgba(255, 255, 255, 0.25);
         display: inline-flex;
         align-items: center;
         gap: 8px;
@@ -159,7 +158,7 @@
 
       .btn-start:hover {
         transform: translateY(-1px);
-        box-shadow: 0 6px 25px rgba(56, 189, 248, 0.55);
+        box-shadow: 0 6px 25px rgba(255, 255, 255, 0.4);
       }
 
       .btn-new-tab {
@@ -182,7 +181,7 @@
         background: rgba(255, 255, 255, 0.12);
       }
 
-      /* Scanning Reticle HUD */
+      /* Minimal Viewfinder Reticle */
       #scanning-hud {
         position: fixed;
         inset: 0;
@@ -203,9 +202,9 @@
         position: relative;
         width: min(72vw, 290px);
         height: min(72vw, 290px);
-        border: 1px dashed rgba(56, 189, 248, 0.3);
+        border: 1px dashed rgba(255, 255, 255, 0.25);
         border-radius: 20px;
-        box-shadow: inset 0 0 30px rgba(56, 189, 248, 0.08);
+        box-shadow: inset 0 0 30px rgba(255, 255, 255, 0.04);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -215,7 +214,7 @@
         position: absolute;
         width: 22px;
         height: 22px;
-        border-color: #38bdf8;
+        border-color: #ffffff;
         border-style: solid;
       }
       .hud-tl { top: -2px; left: -2px; border-width: 3px 0 0 3px; border-top-left-radius: 8px; }
@@ -229,15 +228,15 @@
         left: 0;
         right: 0;
         height: 2px;
-        background: linear-gradient(90deg, transparent, #38bdf8, #2dd4bf, transparent);
-        box-shadow: 0 0 10px #38bdf8;
+        background: linear-gradient(90deg, transparent, #ffffff, transparent);
+        box-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
         animation: scanSweep 2.4s ease-in-out infinite alternate;
       }
 
       @keyframes scanSweep {
-        0% { top: 8%; opacity: 0.3; }
-        50% { opacity: 1; }
-        100% { top: 92%; opacity: 0.3; }
+        0% { top: 8%; opacity: 0.2; }
+        50% { opacity: 0.9; }
+        100% { top: 92%; opacity: 0.2; }
       }
 
       .hud-text {
@@ -245,80 +244,17 @@
         font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 1.2px;
-        color: #e0f2fe;
-        background: rgba(15, 23, 42, 0.88);
+        color: #f8fafc;
+        background: rgba(15, 23, 42, 0.85);
         padding: 8px 18px;
         border-radius: 999px;
         margin-top: 24px;
         backdrop-filter: blur(12px);
-        border: 1px solid rgba(56, 189, 248, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.2);
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
         display: flex;
         align-items: center;
         gap: 8px;
-      }
-
-      /* Top Header Status */
-      #top-header {
-        position: fixed;
-        top: 16px;
-        left: 50%;
-        transform: translateX(-50%);
-        z-index: 1001;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        background: rgba(15, 23, 42, 0.85);
-        border: 1px solid rgba(255, 255, 255, 0.18);
-        padding: 8px 18px;
-        border-radius: 999px;
-        backdrop-filter: blur(12px);
-        color: #f1f5f9;
-        font-size: 12px;
-        font-weight: 500;
-        letter-spacing: 0.3px;
-        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.45);
-        pointer-events: none;
-      }
-
-      .status-dot {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background: #22c55e;
-        box-shadow: 0 0 10px #22c55e;
-      }
-
-      /* Bottom Left Controls */
-      #bottom-controls {
-        position: fixed;
-        bottom: 24px;
-        left: 20px;
-        z-index: 1001;
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-      }
-
-      .control-pill {
-        background: rgba(15, 23, 42, 0.88);
-        border: 1px solid rgba(56, 189, 248, 0.3);
-        padding: 9px 16px;
-        border-radius: 999px;
-        font-size: 12px;
-        font-weight: 500;
-        backdrop-filter: blur(10px);
-        cursor: pointer;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        color: #38bdf8;
-        transition: all 0.2s ease;
-      }
-
-      .control-pill:active {
-        transform: scale(0.96);
       }
 
       /* Audio Status Badge */
@@ -346,119 +282,9 @@
       #audio-badge:active {
         transform: scale(0.96);
       }
-
-      /* Active Exhibition Spotlight Card (Slides up on target detection) */
-      #artwork-spotlight-card {
-        position: fixed;
-        bottom: 22px;
-        left: 50%;
-        transform: translateX(-50%) translateY(0);
-        width: min(390px, 92vw);
-        background: rgba(10, 16, 30, 0.94);
-        border: 1px solid rgba(56, 189, 248, 0.35);
-        border-radius: 20px;
-        padding: 14px 18px;
-        z-index: 1002;
-        backdrop-filter: blur(16px);
-        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 24px rgba(56, 189, 248, 0.2);
-        transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease;
-      }
-
-      #artwork-spotlight-card.hidden {
-        transform: translateX(-50%) translateY(120%);
-        opacity: 0;
-        pointer-events: none;
-      }
-
-      .spotlight-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 8px;
-      }
-
-      .spotlight-tag {
-        font-size: 10px;
-        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-        text-transform: uppercase;
-        letter-spacing: 1.2px;
-        color: #38bdf8;
-        background: rgba(56, 189, 248, 0.15);
-        border: 1px solid rgba(56, 189, 248, 0.3);
-        padding: 3px 10px;
-        border-radius: 999px;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        font-weight: 700;
-      }
-
-      .spotlight-pulse {
-        width: 6px;
-        height: 6px;
-        border-radius: 50%;
-        background: #38bdf8;
-        box-shadow: 0 0 8px #38bdf8;
-      }
-
-      .spotlight-body {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-      }
-
-      .spotlight-info h3 {
-        margin: 0 0 3px 0;
-        font-size: 15px;
-        font-weight: 700;
-        color: #ffffff;
-      }
-
-      .spotlight-info p {
-        margin: 0;
-        font-size: 12px;
-        color: #94a3b8;
-      }
-
-      .audio-wave {
-        display: flex;
-        align-items: flex-end;
-        gap: 3px;
-        height: 18px;
-      }
-
-      .audio-wave .bar {
-        width: 3.5px;
-        border-radius: 999px;
-        background: linear-gradient(180deg, #38bdf8, #2dd4bf);
-        animation: eqWave 0.8s ease-in-out infinite alternate;
-      }
-
-      .audio-wave .bar-1 { height: 60%; animation-delay: 0.1s; }
-      .audio-wave .bar-2 { height: 100%; animation-delay: 0.3s; }
-      .audio-wave .bar-3 { height: 40%; animation-delay: 0.5s; }
-      .audio-wave .bar-4 { height: 80%; animation-delay: 0.2s; }
-
-      .audio-wave.paused .bar {
-        animation-play-state: paused;
-        height: 25% !important;
-        opacity: 0.4;
-      }
-
-      @keyframes eqWave {
-        0% { height: 25%; }
-        100% { height: 100%; }
-      }
     </style>
   </head>
   <body>
-    <!-- Top Header Status -->
-    <div id="top-header">
-      <div class="status-dot"></div>
-      <span id="header-label">🏛️ LIVING CANVAS • AR ACTIVE</span>
-    </div>
-
     <!-- Visual Loading Screen & Fallback Activator -->
     <div id="ar-loader">
       <div class="spinner-ring" id="loader-spinner"></div>
@@ -473,7 +299,7 @@
       </a>
     </div>
 
-    <!-- Holographic Reticle HUD -->
+    <!-- Minimal Viewfinder Reticle HUD -->
     <div id="scanning-hud">
       <div class="hud-frame">
         <div class="hud-corner hud-tl"></div>
@@ -488,42 +314,10 @@
       </div>
     </div>
 
-    <!-- Bottom Left Controls (Stabilizer & Border Toggles) -->
-    <div id="bottom-controls">
-      <div id="stability-badge" class="control-pill" title="Click to cycle stabilizer profiles">
-        <span>🛡️ Stabilizer: <strong>Ultra-Smooth</strong></span>
-      </div>
-      <div id="border-badge" class="control-pill" title="Click to cycle border frame styles">
-        <span>🖼️ Border: <strong>Neon Cyan</strong></span>
-      </div>
-    </div>
-
     <!-- Sound Toggle Button -->
     <div id="audio-badge">🔈 Sound Muted (Tap for Sound)</div>
 
-    <!-- Active Spotlight Notification Card -->
-    <div id="artwork-spotlight-card" class="hidden">
-      <div class="spotlight-header">
-        <div class="spotlight-tag">
-          <span class="spotlight-pulse"></span>
-          <span id="spotlight-target-num">EXHIBIT #01 ACTIVE</span>
-        </div>
-      </div>
-      <div class="spotlight-body">
-        <div class="spotlight-info">
-          <h3 id="spotlight-title">Living Canvas I</h3>
-          <p id="spotlight-desc">Spatial Video & Audio Sync</p>
-        </div>
-        <div id="audio-wave" class="audio-wave paused">
-          <div class="bar bar-1"></div>
-          <div class="bar bar-2"></div>
-          <div class="bar bar-3"></div>
-          <div class="bar bar-4"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- A-Frame WebAR Scene with MindAR Tracking -->
+    <!-- A-Frame WebAR Scene with MindAR Tracking (Locked to Ultra-Smooth Stabilization) -->
     <a-scene
       mindar-image="imageTargetSrc: ./assets/targets.mind; filterMinCF: 0.00008; filterBeta: 0.03; warmupTolerance: 2; missTolerance: 10; autoStart: true;"
       color-space="sRGB"
@@ -577,27 +371,17 @@
 
       <!-- Target Anchor 1: First Physical Artwork (targetIndex: 0) -->
       <a-entity id="target-anchor" mindar-image-target="targetIndex: 0">
-        <!-- Shadow Backing -->
-        <a-plane
-          id="ar-shadow-1"
-          position="0 -0.04 -0.015"
-          width="1.95"
-          height="1.18"
-          color="#000000"
-          material="shader: flat; opacity: 0.45; transparent: true;"
-        ></a-plane>
-
-        <!-- Glowing Frame Border -->
+        <!-- Minimal White Frame Border -->
         <a-plane
           id="ar-video-border-1"
           position="0 0 -0.005"
           width="1.838"
           height="1.06"
-          color="#38bdf8"
+          color="#ffffff"
           material="shader: flat; opacity: 0.95; transparent: true;"
         ></a-plane>
 
-        <!-- Living Canvas Video Plane -->
+        <!-- Video Overlay Plane -->
         <a-video
           id="ar-video-plane"
           src="#artwork-video"
@@ -606,47 +390,21 @@
           width="1.778"
           rotation="0 0 0"
         ></a-video>
-
-        <!-- Floating Ambient Depth Motes -->
-        <a-sphere
-          position="-0.95 0.45 0.08"
-          radius="0.02"
-          color="#38bdf8"
-          material="shader: flat; opacity: 0.8; transparent: true;"
-          animation="property: position; to: -0.92 0.50 0.14; dir: alternate; dur: 2800; loop: true; easing: easeInOutSine;"
-        ></a-sphere>
-        <a-sphere
-          position="0.95 -0.4 0.07"
-          radius="0.018"
-          color="#2dd4bf"
-          material="shader: flat; opacity: 0.8; transparent: true;"
-          animation="property: position; to: 0.98 -0.36 0.12; dir: alternate; dur: 3200; loop: true; easing: easeInOutSine;"
-        ></a-sphere>
       </a-entity>
 
       <!-- Target Anchor 2: Second Physical Artwork (targetIndex: 1) -->
       <a-entity id="target-anchor-2" mindar-image-target="targetIndex: 1">
-        <!-- Shadow Backing -->
-        <a-plane
-          id="ar-shadow-2"
-          position="0 -0.04 -0.015"
-          width="1.95"
-          height="1.18"
-          color="#000000"
-          material="shader: flat; opacity: 0.45; transparent: true;"
-        ></a-plane>
-
-        <!-- Glowing Frame Border -->
+        <!-- Minimal White Frame Border -->
         <a-plane
           id="ar-video-border-2"
           position="0 0 -0.005"
           width="1.838"
           height="1.06"
-          color="#38bdf8"
+          color="#ffffff"
           material="shader: flat; opacity: 0.95; transparent: true;"
         ></a-plane>
 
-        <!-- Living Canvas Video Plane -->
+        <!-- Video Overlay Plane -->
         <a-video
           id="ar-video-plane-2"
           src="#artwork-video-2"
@@ -655,40 +413,21 @@
           width="1.778"
           rotation="0 0 0"
         ></a-video>
-
-        <!-- Floating Ambient Depth Motes -->
-        <a-sphere
-          position="-0.95 0.45 0.08"
-          radius="0.02"
-          color="#2dd4bf"
-          material="shader: flat; opacity: 0.8; transparent: true;"
-          animation="property: position; to: -0.92 0.50 0.14; dir: alternate; dur: 2800; loop: true; easing: easeInOutSine;"
-        ></a-sphere>
       </a-entity>
 
       <!-- Target Anchor 3: Third Physical Artwork (targetIndex: 2) -->
       <a-entity id="target-anchor-3" mindar-image-target="targetIndex: 2">
-        <!-- Shadow Backing -->
-        <a-plane
-          id="ar-shadow-3"
-          position="0 -0.04 -0.015"
-          width="1.95"
-          height="1.18"
-          color="#000000"
-          material="shader: flat; opacity: 0.45; transparent: true;"
-        ></a-plane>
-
-        <!-- Glowing Frame Border -->
+        <!-- Minimal White Frame Border -->
         <a-plane
           id="ar-video-border-3"
           position="0 0 -0.005"
           width="1.838"
           height="1.06"
-          color="#38bdf8"
+          color="#ffffff"
           material="shader: flat; opacity: 0.95; transparent: true;"
         ></a-plane>
 
-        <!-- Living Canvas Video Plane -->
+        <!-- Video Overlay Plane -->
         <a-video
           id="ar-video-plane-3"
           src="#artwork-video-3"
@@ -697,15 +436,6 @@
           width="1.778"
           rotation="0 0 0"
         ></a-video>
-
-        <!-- Floating Ambient Depth Motes -->
-        <a-sphere
-          position="0.95 -0.4 0.07"
-          radius="0.018"
-          color="#38bdf8"
-          material="shader: flat; opacity: 0.8; transparent: true;"
-          animation="property: position; to: 0.98 -0.36 0.12; dir: alternate; dur: 3200; loop: true; easing: easeInOutSine;"
-        ></a-sphere>
       </a-entity>
     </a-scene>
 
@@ -714,19 +444,16 @@
       const targetAnchor1 = document.getElementById('target-anchor');
       const videoPlane1 = document.getElementById('ar-video-plane');
       const border1 = document.getElementById('ar-video-border-1');
-      const shadow1 = document.getElementById('ar-shadow-1');
 
       const video2 = document.getElementById('artwork-video-2');
       const targetAnchor2 = document.getElementById('target-anchor-2');
       const videoPlane2 = document.getElementById('ar-video-plane-2');
       const border2 = document.getElementById('ar-video-border-2');
-      const shadow2 = document.getElementById('ar-shadow-2');
 
       const video3 = document.getElementById('artwork-video-3');
       const targetAnchor3 = document.getElementById('target-anchor-3');
       const videoPlane3 = document.getElementById('ar-video-plane-3');
       const border3 = document.getElementById('ar-video-border-3');
-      const shadow3 = document.getElementById('ar-shadow-3');
 
       const loader = document.getElementById('ar-loader');
       const loaderStatus = document.getElementById('loader-status');
@@ -738,25 +465,10 @@
 
       const hud = document.getElementById('scanning-hud');
       const audioBadge = document.getElementById('audio-badge');
-      const stabilityBadge = document.getElementById('stability-badge');
-      const borderBadge = document.getElementById('border-badge');
-      const bottomControls = document.getElementById('bottom-controls');
-      const headerLabel = document.getElementById('header-label');
-      const spotlightCard = document.getElementById('artwork-spotlight-card');
-      const spotlightTargetNum = document.getElementById('spotlight-target-num');
-      const spotlightTitle = document.getElementById('spotlight-title');
-      const spotlightDesc = document.getElementById('spotlight-desc');
-      const audioWave = document.getElementById('audio-wave');
       const scene = document.querySelector('a-scene');
 
-      const EXHIBIT_DATA = [
-        { num: 'EXHIBIT #01 ACTIVE', title: 'Living Canvas I', desc: 'Spatial Video & Audio Sync' },
-        { num: 'EXHIBIT #02 ACTIVE', title: 'Living Canvas II', desc: 'Space Exploration Visuals' },
-        { num: 'EXHIBIT #03 ACTIVE', title: 'Living Canvas III', desc: 'Impressionist Memory Loop' }
-      ];
-
-      // Auto-fit helper for aspect ratios
-      function setupVideoAutoFit(videoEl, planeEl, borderEl, shadowEl) {
+      // Auto-fit helper to match video aspect ratio cleanly with white frame border
+      function setupVideoAutoFit(videoEl, planeEl, borderEl) {
         if (!videoEl || !planeEl) return;
         const setDims = () => {
           if (videoEl.videoWidth && videoEl.videoHeight) {
@@ -768,11 +480,6 @@
               borderEl.setAttribute('width', (aspect + borderPad).toFixed(3));
               borderEl.setAttribute('height', (1 + borderPad).toFixed(3));
             }
-            if (shadowEl) {
-              const shadowPad = 0.20;
-              shadowEl.setAttribute('width', (aspect + shadowPad).toFixed(3));
-              shadowEl.setAttribute('height', (1 + shadowPad).toFixed(3));
-            }
           }
         };
 
@@ -780,9 +487,9 @@
         if (videoEl.readyState >= 1) setDims();
       }
 
-      setupVideoAutoFit(video1, videoPlane1, border1, shadow1);
-      setupVideoAutoFit(video2, videoPlane2, border2, shadow2);
-      setupVideoAutoFit(video3, videoPlane3, border3, shadow3);
+      setupVideoAutoFit(video1, videoPlane1, border1);
+      setupVideoAutoFit(video2, videoPlane2, border2);
+      setupVideoAutoFit(video3, videoPlane3, border3);
 
       // Dismiss Loader when AR is ready
       let isReadyDismissed = false;
@@ -869,16 +576,6 @@
 
       let activeTargetCount = 0;
 
-      function updateSpotlight(index) {
-        const data = EXHIBIT_DATA[index];
-        if (spotlightTargetNum) spotlightTargetNum.innerText = data.num;
-        if (spotlightTitle) spotlightTitle.innerText = data.title;
-        if (spotlightDesc) spotlightDesc.innerText = data.desc;
-        if (spotlightCard) spotlightCard.classList.remove('hidden');
-        if (headerLabel) headerLabel.innerText = `● ${data.title} LOCKED`;
-        if (navigator.vibrate) navigator.vibrate([40, 20, 40]);
-      }
-
       // Bind Artwork 1 Events
       if (targetAnchor1) {
         targetAnchor1.addEventListener('targetFound', () => {
@@ -888,17 +585,12 @@
           if (video2) video2.pause();
           if (video3) video3.pause();
           video1.play().catch(e => console.warn('Video 1 play pending:', e));
-          updateSpotlight(0);
         });
 
         targetAnchor1.addEventListener('targetLost', () => {
           console.log('[AR Engine] Artwork 1 lost.');
           activeTargetCount = Math.max(0, activeTargetCount - 1);
-          if (activeTargetCount === 0) {
-            if (hud) hud.classList.remove('hidden');
-            if (spotlightCard) spotlightCard.classList.add('hidden');
-            if (headerLabel) headerLabel.innerText = '🏛️ LIVING CANVAS • AR ACTIVE';
-          }
+          if (activeTargetCount === 0 && hud) hud.classList.remove('hidden');
           video1.pause();
         });
       }
@@ -912,17 +604,12 @@
           if (video1) video1.pause();
           if (video3) video3.pause();
           video2.play().catch(e => console.warn('Video 2 play pending:', e));
-          updateSpotlight(1);
         });
 
         targetAnchor2.addEventListener('targetLost', () => {
           console.log('[AR Engine] Artwork 2 lost.');
           activeTargetCount = Math.max(0, activeTargetCount - 1);
-          if (activeTargetCount === 0) {
-            if (hud) hud.classList.remove('hidden');
-            if (spotlightCard) spotlightCard.classList.add('hidden');
-            if (headerLabel) headerLabel.innerText = '🏛️ LIVING CANVAS • AR ACTIVE';
-          }
+          if (activeTargetCount === 0 && hud) hud.classList.remove('hidden');
           video2.pause();
         });
       }
@@ -936,17 +623,12 @@
           if (video1) video1.pause();
           if (video2) video2.pause();
           video3.play().catch(e => console.warn('Video 3 play pending:', e));
-          updateSpotlight(2);
         });
 
         targetAnchor3.addEventListener('targetLost', () => {
           console.log('[AR Engine] Artwork 3 lost.');
           activeTargetCount = Math.max(0, activeTargetCount - 1);
-          if (activeTargetCount === 0) {
-            if (hud) hud.classList.remove('hidden');
-            if (spotlightCard) spotlightCard.classList.add('hidden');
-            if (headerLabel) headerLabel.innerText = '🏛️ LIVING CANVAS • AR ACTIVE';
-          }
+          if (activeTargetCount === 0 && hud) hud.classList.remove('hidden');
           video3.pause();
         });
       }
@@ -959,14 +641,12 @@
         if (video2) video2.muted = muted;
         if (video3) video3.muted = muted;
 
-        if (audioWave) audioWave.classList.toggle('paused', muted);
-
         if (muted) {
           audioBadge.innerText = '🔈 Sound Muted (Tap for Sound)';
           audioBadge.style.borderColor = 'rgba(255, 255, 255, 0.2)';
         } else {
           audioBadge.innerText = '🔊 Sound On';
-          audioBadge.style.borderColor = '#38bdf8';
+          audioBadge.style.borderColor = '#ffffff';
         }
       }
 
@@ -976,86 +656,9 @@
       });
 
       // First user tap unlocks audio
-      window.addEventListener('click', (e) => {
-        if (bottomControls && bottomControls.contains(e.target)) return;
-        if (spotlightCard && spotlightCard.contains(e.target)) return;
+      window.addEventListener('click', () => {
         if (isGlobalMuted) setMuteState(false);
       }, { once: true });
-
-      // Border Style Switcher
-      const BORDER_STYLES = [
-        { id: 'cyan', label: 'Neon Cyan', color: '#38bdf8', opacity: 0.95, visible: true },
-        { id: 'white', label: 'Minimal White', color: '#ffffff', opacity: 0.95, visible: true },
-        { id: 'gold', label: 'Gallery Gold', color: '#eab308', opacity: 0.95, visible: true },
-        { id: 'violet', label: 'Electric Purple', color: '#c084fc', opacity: 0.95, visible: true },
-        { id: 'emerald', label: 'Tech Emerald', color: '#34d399', opacity: 0.95, visible: true },
-        { id: 'none', label: 'Frameless (Off)', color: '#64748b', opacity: 0, visible: false },
-      ];
-      let currentBorderIndex = 0;
-
-      function applyBorderStyle(idx) {
-        currentBorderIndex = idx % BORDER_STYLES.length;
-        const style = BORDER_STYLES[currentBorderIndex];
-
-        [border1, border2, border3].forEach((b) => {
-          if (!b) return;
-          b.setAttribute('visible', style.visible ? 'true' : 'false');
-          if (style.visible) {
-            b.setAttribute('color', style.color);
-            b.setAttribute('material', `shader: flat; opacity: ${style.opacity}; transparent: true;`);
-          }
-        });
-
-        if (borderBadge) {
-          borderBadge.innerHTML = `<span>🖼️ Border: <strong>${style.label}</strong></span>`;
-          borderBadge.style.color = style.visible ? style.color : '#94a3b8';
-          borderBadge.style.borderColor = style.visible ? style.color : 'rgba(255,255,255,0.2)';
-        }
-      }
-
-      if (borderBadge) {
-        borderBadge.addEventListener('click', (e) => {
-          e.stopPropagation();
-          applyBorderStyle(currentBorderIndex + 1);
-        });
-      }
-
-      // Advanced 1-Euro Filter Stabilizer Profiles
-      const STABILITY_PROFILES = [
-        { id: 'rock', name: 'Rock-Solid (Max Lock)', icon: '🔒', minCutOff: 0.00003, beta: 0.008, color: '#38bdf8' },
-        { id: 'ultra', name: 'Ultra-Smooth (Default)', icon: '🛡️', minCutOff: 0.00008, beta: 0.03, color: '#2dd4bf' },
-        { id: 'balanced', name: 'Balanced Dynamic', icon: '⚡', minCutOff: 0.0008, beta: 0.5, color: '#f59e0b' },
-        { id: 'fast', name: 'Fast Track', icon: '💨', minCutOff: 0.005, beta: 15.0, color: '#ec4899' }
-      ];
-      let currentStabilityIndex = 1;
-
-      function applyStabilityProfile(index) {
-        currentStabilityIndex = index % STABILITY_PROFILES.length;
-        const profile = STABILITY_PROFILES[currentStabilityIndex];
-
-        const arSystem = scene ? scene.systems['mindar-image-system'] : null;
-        const controller = arSystem ? arSystem.controller : null;
-        const trackingStates = (controller && controller.trackingStates) ? controller.trackingStates : [];
-
-        trackingStates.forEach((state) => {
-          if (!state || !state.filter) return;
-          state.filter.minCutOff = profile.minCutOff;
-          state.filter.beta = profile.beta;
-        });
-
-        if (stabilityBadge) {
-          stabilityBadge.innerHTML = `<span>${profile.icon} Stabilizer: <strong>${profile.name}</strong></span>`;
-          stabilityBadge.style.color = profile.color;
-          stabilityBadge.style.borderColor = profile.color;
-        }
-      }
-
-      if (stabilityBadge) {
-        stabilityBadge.addEventListener('click', (e) => {
-          e.stopPropagation();
-          applyStabilityProfile(currentStabilityIndex + 1);
-        });
-      }
     </script>
   </body>
 </html>
