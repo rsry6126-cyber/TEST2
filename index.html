@@ -574,64 +574,74 @@
         if (openNewTabBtn) openNewTabBtn.style.display = 'inline-flex';
       });
 
-      let activeTargetCount = 0;
+      // Centralized Target State Manager: guarantees 100% mutual exclusion
+      const targetVideos = [video1, video2, video3];
+      let currentActiveTarget = null; // null | 0 | 1 | 2
 
-      // Bind Artwork 1 Events
+      function handleTargetFound(targetIndex) {
+        console.log(`[AR Engine] Artwork ${targetIndex + 1} detected! Target Index: ${targetIndex}`);
+        currentActiveTarget = targetIndex;
+        if (hud) hud.classList.add('hidden');
+
+        // Strictly pause every other video; only play the dedicated video for this target index
+        targetVideos.forEach((vid, idx) => {
+          if (!vid) return;
+          if (idx === targetIndex) {
+            vid.play().catch(e => console.warn(`Video ${idx + 1} play pending gesture:`, e));
+          } else {
+            vid.pause();
+          }
+        });
+      }
+
+      function handleTargetLost(targetIndex) {
+        console.log(`[AR Engine] Artwork ${targetIndex + 1} lost. Target Index: ${targetIndex}`);
+        
+        // Immediately pause this artwork's video
+        if (targetVideos[targetIndex]) {
+          targetVideos[targetIndex].pause();
+        }
+
+        if (currentActiveTarget === targetIndex) {
+          currentActiveTarget = null;
+          if (hud) hud.classList.remove('hidden');
+        }
+      }
+
+      // Bind Artwork 1 Events (targetIndex: 0 -> video 1)
       if (targetAnchor1) {
-        targetAnchor1.addEventListener('targetFound', () => {
-          console.log('[AR Engine] Artwork 1 detected!');
-          activeTargetCount++;
-          if (hud) hud.classList.add('hidden');
-          if (video2) video2.pause();
-          if (video3) video3.pause();
-          video1.play().catch(e => console.warn('Video 1 play pending:', e));
-        });
-
-        targetAnchor1.addEventListener('targetLost', () => {
-          console.log('[AR Engine] Artwork 1 lost.');
-          activeTargetCount = Math.max(0, activeTargetCount - 1);
-          if (activeTargetCount === 0 && hud) hud.classList.remove('hidden');
-          video1.pause();
-        });
+        targetAnchor1.addEventListener('targetFound', () => handleTargetFound(0));
+        targetAnchor1.addEventListener('targetLost', () => handleTargetLost(0));
       }
 
-      // Bind Artwork 2 Events
+      // Bind Artwork 2 Events (targetIndex: 1 -> video 2)
       if (targetAnchor2) {
-        targetAnchor2.addEventListener('targetFound', () => {
-          console.log('[AR Engine] Artwork 2 detected!');
-          activeTargetCount++;
-          if (hud) hud.classList.add('hidden');
-          if (video1) video1.pause();
-          if (video3) video3.pause();
-          video2.play().catch(e => console.warn('Video 2 play pending:', e));
-        });
-
-        targetAnchor2.addEventListener('targetLost', () => {
-          console.log('[AR Engine] Artwork 2 lost.');
-          activeTargetCount = Math.max(0, activeTargetCount - 1);
-          if (activeTargetCount === 0 && hud) hud.classList.remove('hidden');
-          video2.pause();
-        });
+        targetAnchor2.addEventListener('targetFound', () => handleTargetFound(1));
+        targetAnchor2.addEventListener('targetLost', () => handleTargetLost(1));
       }
 
-      // Bind Artwork 3 Events
+      // Bind Artwork 3 Events (targetIndex: 2 -> video 3)
       if (targetAnchor3) {
-        targetAnchor3.addEventListener('targetFound', () => {
-          console.log('[AR Engine] Artwork 3 detected!');
-          activeTargetCount++;
-          if (hud) hud.classList.add('hidden');
-          if (video1) video1.pause();
-          if (video2) video2.pause();
-          video3.play().catch(e => console.warn('Video 3 play pending:', e));
-        });
-
-        targetAnchor3.addEventListener('targetLost', () => {
-          console.log('[AR Engine] Artwork 3 lost.');
-          activeTargetCount = Math.max(0, activeTargetCount - 1);
-          if (activeTargetCount === 0 && hud) hud.classList.remove('hidden');
-          video3.pause();
-        });
+        targetAnchor3.addEventListener('targetFound', () => handleTargetFound(2));
+        targetAnchor3.addEventListener('targetLost', () => handleTargetLost(2));
       }
+
+      // Smart check for dedicated video files (e.g. video2.mp4, video3.mp4)
+      async function resolveDedicatedVideo(videoEl, preferredSrc, fallbackSrc) {
+        if (!videoEl) return;
+        try {
+          const res = await fetch(preferredSrc, { method: 'HEAD' });
+          if (res.ok) {
+            videoEl.src = preferredSrc;
+            console.log(`[AR Engine] Dedicated video active for ${videoEl.id}: ${preferredSrc}`);
+            return;
+          }
+        } catch (e) {}
+        videoEl.src = fallbackSrc;
+      }
+
+      resolveDedicatedVideo(video2, './assets/video2.mp4', './assets/my-video.mp4');
+      resolveDedicatedVideo(video3, './assets/video3.mp4', './assets/my-video.mp4');
 
       // Audio Toggle Controller
       let isGlobalMuted = true;
