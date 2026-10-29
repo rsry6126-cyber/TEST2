@@ -214,7 +214,7 @@
         position: absolute;
         width: 22px;
         height: 22px;
-        border-color: #ffffff;
+        border-color: #007C94;
         border-style: solid;
       }
       .hud-tl { top: -2px; left: -2px; border-width: 3px 0 0 3px; border-top-left-radius: 8px; }
@@ -228,8 +228,8 @@
         left: 0;
         right: 0;
         height: 2px;
-        background: linear-gradient(90deg, transparent, #ffffff, transparent);
-        box-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
+        background: linear-gradient(90deg, transparent, #23BFBC, transparent);
+        box-shadow: 0 0 10px #23BFBC;
         animation: scanSweep 2.4s ease-in-out infinite alternate;
       }
 
@@ -371,13 +371,13 @@
 
       <!-- Target Anchor 1: First Physical Artwork (targetIndex: 0) -->
       <a-entity id="target-anchor" mindar-image-target="targetIndex: 0">
-        <!-- Minimal White Frame Border -->
+        <!-- Frame Border matching Artwork Ocean Teal (#007C94) -->
         <a-plane
           id="ar-video-border-1"
           position="0 0 -0.005"
           width="1.838"
           height="1.06"
-          color="#ffffff"
+          color="#007C94"
           material="shader: flat; opacity: 0.95; transparent: true;"
         ></a-plane>
 
@@ -394,13 +394,13 @@
 
       <!-- Target Anchor 2: Second Physical Artwork (targetIndex: 1) -->
       <a-entity id="target-anchor-2" mindar-image-target="targetIndex: 1">
-        <!-- Minimal White Frame Border -->
+        <!-- Frame Border matching Artwork Ocean Teal (#007C94) -->
         <a-plane
           id="ar-video-border-2"
           position="0 0 -0.005"
           width="1.838"
           height="1.06"
-          color="#ffffff"
+          color="#007C94"
           material="shader: flat; opacity: 0.95; transparent: true;"
         ></a-plane>
 
@@ -417,13 +417,13 @@
 
       <!-- Target Anchor 3: Third Physical Artwork (targetIndex: 2) -->
       <a-entity id="target-anchor-3" mindar-image-target="targetIndex: 2">
-        <!-- Minimal White Frame Border -->
+        <!-- Frame Border matching Artwork Ocean Teal (#007C94) -->
         <a-plane
           id="ar-video-border-3"
           position="0 0 -0.005"
           width="1.838"
           height="1.06"
-          color="#ffffff"
+          color="#007C94"
           material="shader: flat; opacity: 0.95; transparent: true;"
         ></a-plane>
 
@@ -467,7 +467,10 @@
       const audioBadge = document.getElementById('audio-badge');
       const scene = document.querySelector('a-scene');
 
-      // Auto-fit helper to match video aspect ratio cleanly with white frame border
+      // FRAME BORDER COLOR: Exact match to your physical artwork's Ocean Teal border (#007C94)
+      const FRAME_BORDER_COLOR = '#007C94';
+
+      // Auto-fit helper to match video aspect ratio cleanly with artwork frame border
       function setupVideoAutoFit(videoEl, planeEl, borderEl) {
         if (!videoEl || !planeEl) return;
         const setDims = () => {
@@ -479,6 +482,7 @@
               const borderPad = 0.06;
               borderEl.setAttribute('width', (aspect + borderPad).toFixed(3));
               borderEl.setAttribute('height', (1 + borderPad).toFixed(3));
+              borderEl.setAttribute('color', FRAME_BORDER_COLOR);
             }
           }
         };
