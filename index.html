@@ -317,9 +317,9 @@
     <!-- Sound Toggle Button -->
     <div id="audio-badge">🔈 Sound Muted (Tap for Sound)</div>
 
-    <!-- A-Frame WebAR Scene with MindAR Tracking (Locked to Ultra-Smooth Stabilization) -->
+    <!-- A-Frame WebAR Scene with MindAR Tracking (Tuned for Maximum Discrimination & Anti-Cross-Triggering) -->
     <a-scene
-      mindar-image="imageTargetSrc: ./assets/targets.mind; filterMinCF: 0.00008; filterBeta: 0.03; warmupTolerance: 2; missTolerance: 10; autoStart: true;"
+      mindar-image="imageTargetSrc: ./assets/targets.mind; maxTrack: 1; filterMinCF: 0.0001; filterBeta: 0.02; warmupTolerance: 5; missTolerance: 4; autoStart: true;"
       color-space="sRGB"
       renderer="colorManagement: true, physicallyCorrectLights: true, alpha: true"
       vr-mode-ui="enabled: false"
@@ -578,22 +578,48 @@
         if (openNewTabBtn) openNewTabBtn.style.display = 'inline-flex';
       });
 
-      // Centralized Target State Manager: guarantees 100% mutual exclusion
+      // Centralized Target State Manager: guarantees 100% mutual exclusion and anti-cross-triggering
+      const targetAnchors = [targetAnchor1, targetAnchor2, targetAnchor3];
       const targetVideos = [video1, video2, video3];
       let currentActiveTarget = null; // null | 0 | 1 | 2
 
+      function isTargetAnchorVisible(idx) {
+        const el = targetAnchors[idx];
+        return el && el.object3D && el.object3D.visible;
+      }
+
       function handleTargetFound(targetIndex) {
-        console.log(`[AR Engine] Artwork ${targetIndex + 1} detected! Target Index: ${targetIndex}`);
+        console.log(`[AR Engine] Candidate detection for Artwork ${targetIndex + 1} (targetIndex: ${targetIndex})`);
+
+        // ANTI-CROSS-TRIGGER GUARD:
+        // If an artwork is already actively locked and its 3D anchor is still visible in camera view,
+        // reject false-positive events from other artworks!
+        if (currentActiveTarget !== null && currentActiveTarget !== targetIndex) {
+          if (isTargetAnchorVisible(currentActiveTarget)) {
+            console.warn(`[AR Engine] Blocked cross-trigger: Artwork ${targetIndex + 1} ignored because Artwork ${currentActiveTarget + 1} is already actively tracked.`);
+            if (targetAnchors[targetIndex] && targetAnchors[targetIndex].object3D) {
+              targetAnchors[targetIndex].object3D.visible = false;
+            }
+            return;
+          }
+        }
+
         currentActiveTarget = targetIndex;
         if (hud) hud.classList.add('hidden');
 
-        // Strictly pause every other video; only play the dedicated video for this target index
+        // Strictly enforce 1-to-1 mapping: only play dedicated video, force-hide other meshes
         targetVideos.forEach((vid, idx) => {
           if (!vid) return;
           if (idx === targetIndex) {
+            if (targetAnchors[idx] && targetAnchors[idx].object3D) {
+              targetAnchors[idx].object3D.visible = true;
+            }
             vid.play().catch(e => console.warn(`Video ${idx + 1} play pending gesture:`, e));
           } else {
             vid.pause();
+            if (targetAnchors[idx] && targetAnchors[idx].object3D) {
+              targetAnchors[idx].object3D.visible = false;
+            }
           }
         });
       }
@@ -608,7 +634,12 @@
 
         if (currentActiveTarget === targetIndex) {
           currentActiveTarget = null;
-          if (hud) hud.classList.remove('hidden');
+          // Show viewfinder HUD after a brief delay if no artwork is in frame
+          setTimeout(() => {
+            if (currentActiveTarget === null) {
+              if (hud) hud.classList.remove('hidden');
+            }
+          }, 150);
         }
       }
 
