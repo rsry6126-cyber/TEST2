@@ -27,25 +27,6 @@
     <!-- MindAR Image Tracking for A-Frame -->
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
 
-    <!-- Fair Multi-Target Rotation Patch: Prevents earlier targets from permanently shadowing later targets -->
-    <script>
-      (function() {
-        if (window.MINDAR && window.MINDAR.IMAGE && window.MINDAR.IMAGE.Controller) {
-          const originalDetectAndMatch = window.MINDAR.IMAGE.Controller.prototype._detectAndMatch;
-          let searchRotationIndex = 0;
-
-          window.MINDAR.IMAGE.Controller.prototype._detectAndMatch = async function(tensor, candidateIndexes) {
-            if (candidateIndexes && candidateIndexes.length > 1) {
-              searchRotationIndex = (searchRotationIndex + 1) % candidateIndexes.length;
-              const rotated = candidateIndexes.slice(searchRotationIndex).concat(candidateIndexes.slice(0, searchRotationIndex));
-              return await originalDetectAndMatch.call(this, tensor, rotated);
-            }
-            return await originalDetectAndMatch.call(this, tensor, candidateIndexes);
-          };
-          console.log('[AR Engine] Fair Multi-Target Search Rotation active.');
-        }
-      })();
-    </script>
 
     <style>
       * {
@@ -457,6 +438,7 @@
           width="1.838"
           height="1.06"
           color="#007C94"
+          visible="false"
           material="shader: flat; opacity: 0.95; transparent: true;"
         ></a-plane>
 
@@ -468,6 +450,8 @@
           height="1"
           width="1.778"
           rotation="0 0 0"
+          visible="false"
+          material="shader: flat; opacity: 0; transparent: true;"
         ></a-video>
       </a-entity>
 
@@ -480,6 +464,7 @@
           width="1.838"
           height="1.06"
           color="#007C94"
+          visible="false"
           material="shader: flat; opacity: 0.95; transparent: true;"
         ></a-plane>
 
@@ -491,6 +476,8 @@
           height="1"
           width="1.778"
           rotation="0 0 0"
+          visible="false"
+          material="shader: flat; opacity: 0; transparent: true;"
         ></a-video>
       </a-entity>
 
@@ -503,6 +490,7 @@
           width="1.838"
           height="1.06"
           color="#007C94"
+          visible="false"
           material="shader: flat; opacity: 0.95; transparent: true;"
         ></a-plane>
 
@@ -514,6 +502,8 @@
           height="1"
           width="1.778"
           rotation="0 0 0"
+          visible="false"
+          material="shader: flat; opacity: 0; transparent: true;"
         ></a-video>
       </a-entity>
     </a-scene>
@@ -657,31 +647,57 @@
         if (openNewTabBtn) openNewTabBtn.style.display = 'inline-flex';
       });
 
-      // Centralized Target State Manager: Anti-Flash Target Stabilization
+      // Centralized Target State Manager: Reliable Target Activation & Black Screen Prevention
       const targetVideos = [video1, video2, video3];
       const videoPlanes = [videoPlane1, videoPlane2, videoPlane3];
       const borders = [border1, border2, border3];
 
       let confirmedActiveTarget = null; // null | 0 | 1 | 2
-      let candidateTarget = null;
-      let confirmationTimer = null;
+      let currentFilterTarget = -1; // -1 = Auto all, 0 = Art 1, 1 = Art 2, 2 = Art 3
 
-      // Start with all 3D planes hidden until their specific target is confirmed
-      videoPlanes.forEach(plane => { if (plane) plane.setAttribute('visible', 'false'); });
-      borders.forEach(border => { if (border) border.setAttribute('visible', 'false'); });
+      // Start with all 3D planes hidden with 0 opacity
+      videoPlanes.forEach(plane => {
+        if (plane) {
+          plane.setAttribute('visible', 'false');
+          plane.setAttribute('material', 'shader: flat; opacity: 0; transparent: true;');
+        }
+      });
+      borders.forEach(border => {
+        if (border) border.setAttribute('visible', 'false');
+      });
+
+      // Reveal 3D plane ONLY after the video has decoded real frames and is actively rendering
+      // This 100% prevents unbuffered black quads from covering the camera
+      targetVideos.forEach((vid, idx) => {
+        if (!vid) return;
+        const plane = videoPlanes[idx];
+        const border = borders[idx];
+
+        const revealPlaneIfReady = () => {
+          if (confirmedActiveTarget === idx && vid.currentTime > 0.03 && !vid.paused) {
+            if (plane) {
+              plane.setAttribute('visible', 'true');
+              plane.setAttribute('material', 'shader: flat; opacity: 1; transparent: false;');
+            }
+            if (border) {
+              border.setAttribute('visible', 'true');
+            }
+          }
+        };
+
+        vid.addEventListener('timeupdate', revealPlaneIfReady);
+        vid.addEventListener('playing', revealPlaneIfReady);
+      });
 
       function activateTarget(targetIndex) {
-        console.log(`[AR Engine] Confirmed & Activating Artwork ${targetIndex + 1}!`);
+        if (confirmedActiveTarget === targetIndex) return;
+        console.log(`[AR Engine] Activating Artwork ${targetIndex + 1}!`);
         confirmedActiveTarget = targetIndex;
         if (hud) hud.classList.add('hidden');
 
         targetVideos.forEach((vid, idx) => {
           if (!vid) return;
           if (idx === targetIndex) {
-            // Make 3D plane and border visible
-            if (videoPlanes[idx]) videoPlanes[idx].setAttribute('visible', 'true');
-            if (borders[idx]) borders[idx].setAttribute('visible', 'true');
-
             vid.muted = isGlobalMuted;
             const playPromise = vid.play();
             if (playPromise !== undefined) {
@@ -692,60 +708,47 @@
               });
             }
           } else {
-            // Pause, rewind, and hide any other video plane
-            vid.pause();
-            vid.currentTime = 0;
-            if (videoPlanes[idx]) videoPlanes[idx].setAttribute('visible', 'false');
+            // Pause any other video (do NOT seek to 0 to preserve video hardware decoders)
+            if (!vid.paused) vid.pause();
+            if (videoPlanes[idx]) {
+              videoPlanes[idx].setAttribute('visible', 'false');
+              videoPlanes[idx].setAttribute('material', 'shader: flat; opacity: 0; transparent: true;');
+            }
             if (borders[idx]) borders[idx].setAttribute('visible', 'false');
           }
         });
       }
 
       function handleTargetFound(targetIndex) {
-        console.log(`[AR Engine] Candidate detection for Artwork ${targetIndex + 1} (targetIndex: ${targetIndex})`);
-
-        // If this artwork is ALREADY confirmed and playing, keep playing
-        if (confirmedActiveTarget === targetIndex) return;
-
-        // Register new candidate target
-        candidateTarget = targetIndex;
-        if (confirmationTimer) clearTimeout(confirmationTimer);
-
-        // Confirmation stabilization buffer (220ms):
-        // If Target 0 (Artwork 1) produces a momentary 50-100ms false trigger on the outer border
-        // while you are scanning Artwork 2 or 3, Target 1 or 2 will take over before this timer fires.
-        // This 100% guarantees Artwork 1's video NEVER starts playing on Artwork 2 or 3!
-        confirmationTimer = setTimeout(() => {
-          if (candidateTarget === targetIndex) {
-            activateTarget(targetIndex);
-          }
-        }, 220);
+        console.log(`[AR Engine] Target detected: Artwork ${targetIndex + 1} (targetIndex: ${targetIndex})`);
+        // If user selected a specific target filter and this isn't it, ignore
+        if (currentFilterTarget !== -1 && currentFilterTarget !== targetIndex) {
+          return;
+        }
+        activateTarget(targetIndex);
       }
 
       function handleTargetLost(targetIndex) {
-        console.log(`[AR Engine] Artwork ${targetIndex + 1} lost. targetIndex: ${targetIndex}`);
-
-        // If this target was a pending candidate, cancel confirmation
-        if (candidateTarget === targetIndex) {
-          candidateTarget = null;
-          if (confirmationTimer) clearTimeout(confirmationTimer);
-        }
-
-        // If this target was the confirmed active one, shut it down
+        console.log(`[AR Engine] Target lost: Artwork ${targetIndex + 1} (targetIndex: ${targetIndex})`);
         if (confirmedActiveTarget === targetIndex) {
           confirmedActiveTarget = null;
-          if (targetVideos[targetIndex]) {
-            targetVideos[targetIndex].pause();
-            targetVideos[targetIndex].currentTime = 0;
+          const vid = targetVideos[targetIndex];
+          if (vid && !vid.paused) {
+            vid.pause();
           }
-          if (videoPlanes[targetIndex]) videoPlanes[targetIndex].setAttribute('visible', 'false');
-          if (borders[targetIndex]) borders[targetIndex].setAttribute('visible', 'false');
+          if (videoPlanes[targetIndex]) {
+            videoPlanes[targetIndex].setAttribute('visible', 'false');
+            videoPlanes[targetIndex].setAttribute('material', 'shader: flat; opacity: 0; transparent: true;');
+          }
+          if (borders[targetIndex]) {
+            borders[targetIndex].setAttribute('visible', 'false');
+          }
 
           setTimeout(() => {
-            if (confirmedActiveTarget === null && candidateTarget === null) {
-              if (hud) hud.classList.remove('hidden');
+            if (confirmedActiveTarget === null && hud) {
+              hud.classList.remove('hidden');
             }
-          }, 200);
+          }, 250);
         }
       }
 
@@ -796,7 +799,6 @@
 
       // Artwork Mode Selector (Auto All vs Dedicated Target Focus)
       const modePills = document.querySelectorAll('.mode-pill');
-      let currentFilterTarget = -1; // -1 = Auto all
 
       modePills.forEach(pill => {
         pill.addEventListener('click', (e) => {
@@ -813,16 +815,22 @@
             console.log(`[AR Engine] Switched target filter to: ${target === -1 ? 'Auto All' : 'Artwork ' + (target + 1)}`);
           }
 
-          // If filtering to a specific artwork, immediately pause any other video
+          // If filtering to a specific artwork, immediately pause any other video and hide planes
           if (target !== -1) {
             targetVideos.forEach((vid, idx) => {
               if (idx !== target) {
-                vid.pause();
-                vid.currentTime = 0;
-                if (videoPlanes[idx]) videoPlanes[idx].setAttribute('visible', 'false');
+                if (vid && !vid.paused) vid.pause();
+                if (videoPlanes[idx]) {
+                  videoPlanes[idx].setAttribute('visible', 'false');
+                  videoPlanes[idx].setAttribute('material', 'shader: flat; opacity: 0; transparent: true;');
+                }
                 if (borders[idx]) borders[idx].setAttribute('visible', 'false');
               }
             });
+            if (confirmedActiveTarget !== target) {
+              confirmedActiveTarget = null;
+              if (hud) hud.classList.remove('hidden');
+            }
           }
         });
       });
