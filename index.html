@@ -24,8 +24,28 @@
 
     <!-- A-Frame 1.4.2 (Officially paired & tested with MindAR 1.2.5) -->
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-        <!-- MindAR Image Tracking for A-Frame -->
+    <!-- MindAR Image Tracking for A-Frame -->
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+
+    <!-- Fair Multi-Target Rotation Patch: Prevents earlier targets from permanently shadowing later targets -->
+    <script>
+      (function() {
+        if (window.MINDAR && window.MINDAR.IMAGE && window.MINDAR.IMAGE.Controller) {
+          const originalDetectAndMatch = window.MINDAR.IMAGE.Controller.prototype._detectAndMatch;
+          let searchRotationIndex = 0;
+
+          window.MINDAR.IMAGE.Controller.prototype._detectAndMatch = async function(tensor, candidateIndexes) {
+            if (candidateIndexes && candidateIndexes.length > 1) {
+              searchRotationIndex = (searchRotationIndex + 1) % candidateIndexes.length;
+              const rotated = candidateIndexes.slice(searchRotationIndex).concat(candidateIndexes.slice(0, searchRotationIndex));
+              return await originalDetectAndMatch.call(this, tensor, rotated);
+            }
+            return await originalDetectAndMatch.call(this, tensor, candidateIndexes);
+          };
+          console.log('[AR Engine] Fair Multi-Target Search Rotation active.');
+        }
+      })();
+    </script>
 
     <style>
       * {
@@ -282,6 +302,59 @@
       #audio-badge:active {
         transform: scale(0.96);
       }
+
+      /* Artwork Mode Selector Bar */
+      #artwork-mode-bar {
+        position: fixed;
+        top: 16px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1002;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        background: rgba(15, 23, 42, 0.88);
+        padding: 5px 8px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.22);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        max-width: 95vw;
+        overflow-x: auto;
+      }
+
+      .mode-pill {
+        border: none;
+        background: transparent;
+        color: #94a3b8;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 7px 12px;
+        border-radius: 999px;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        user-select: none;
+      }
+
+      .mode-pill.active {
+        background: #007C94;
+        color: #ffffff;
+        box-shadow: 0 2px 10px rgba(0, 124, 148, 0.6);
+      }
+
+      .mode-pill:hover:not(.active) {
+        color: #f8fafc;
+        background: rgba(255, 255, 255, 0.08);
+      }
+
+      .mode-pill:active {
+        transform: scale(0.95);
+      }
     </style>
   </head>
   <body>
@@ -312,6 +385,12 @@
         <span style="font-size: 13px;">✦</span>
         <span>Align Artwork in Frame</span>
       </div>
+    <!-- Artwork Target Selector Pill Bar -->
+    <div id="artwork-mode-bar">
+      <button type="button" class="mode-pill active" data-target="-1">✨ Auto All</button>
+      <button type="button" class="mode-pill" data-target="0">💻 Art 1 (Laptop)</button>
+      <button type="button" class="mode-pill" data-target="1">📺 Art 2 (TV)</button>
+      <button type="button" class="mode-pill" data-target="2">🖥️ Art 3 (Desktop)</button>
     </div>
 
     <!-- Sound Toggle Button -->
@@ -714,6 +793,39 @@
       window.addEventListener('click', () => {
         if (isGlobalMuted) setMuteState(false);
       }, { once: true });
+
+      // Artwork Mode Selector (Auto All vs Dedicated Target Focus)
+      const modePills = document.querySelectorAll('.mode-pill');
+      let currentFilterTarget = -1; // -1 = Auto all
+
+      modePills.forEach(pill => {
+        pill.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const target = parseInt(pill.getAttribute('data-target'), 10);
+          currentFilterTarget = target;
+
+          modePills.forEach(p => p.classList.remove('active'));
+          pill.classList.add('active');
+
+          const arSystem = scene ? scene.systems['mindar-image-system'] : null;
+          if (arSystem) {
+            arSystem.switchTarget(target);
+            console.log(`[AR Engine] Switched target filter to: ${target === -1 ? 'Auto All' : 'Artwork ' + (target + 1)}`);
+          }
+
+          // If filtering to a specific artwork, immediately pause any other video
+          if (target !== -1) {
+            targetVideos.forEach((vid, idx) => {
+              if (idx !== target) {
+                vid.pause();
+                vid.currentTime = 0;
+                if (videoPlanes[idx]) videoPlanes[idx].setAttribute('visible', 'false');
+                if (borders[idx]) borders[idx].setAttribute('visible', 'false');
+              }
+            });
+          }
+        });
+      });
     </script>
   </body>
 </html>
