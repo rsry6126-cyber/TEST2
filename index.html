@@ -290,30 +290,37 @@
         top: 16px;
         left: 50%;
         transform: translateX(-50%);
-        z-index: 1002;
+        z-index: 100000 !important;
+        pointer-events: auto !important;
+        touch-action: manipulation;
+        -webkit-user-select: none;
+        user-select: none;
         display: flex;
         align-items: center;
+        justify-content: center;
         gap: 6px;
-        background: rgba(15, 23, 42, 0.88);
+        background: rgba(15, 23, 42, 0.94);
         padding: 5px 8px;
         border-radius: 999px;
-        border: 1px solid rgba(255, 255, 255, 0.22);
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
-        backdrop-filter: blur(14px);
-        -webkit-backdrop-filter: blur(14px);
-        max-width: 95vw;
-        overflow-x: auto;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        max-width: 96vw;
       }
 
       .mode-pill {
         border: none;
         background: transparent;
         color: #94a3b8;
-        font-size: 11px;
+        font-size: 12px;
         font-weight: 700;
         padding: 7px 12px;
         border-radius: 999px;
         cursor: pointer;
+        pointer-events: auto !important;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
         white-space: nowrap;
         transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
         display: inline-flex;
@@ -325,16 +332,16 @@
       .mode-pill.active {
         background: #007C94;
         color: #ffffff;
-        box-shadow: 0 2px 10px rgba(0, 124, 148, 0.6);
+        box-shadow: 0 2px 10px rgba(0, 124, 148, 0.7);
       }
 
       .mode-pill:hover:not(.active) {
         color: #f8fafc;
-        background: rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.1);
       }
 
       .mode-pill:active {
-        transform: scale(0.95);
+        transform: scale(0.94);
       }
     </style>
   </head>
@@ -368,10 +375,10 @@
       </div>
     <!-- Artwork Target Selector Pill Bar -->
     <div id="artwork-mode-bar">
-      <button type="button" class="mode-pill active" data-target="-1">✨ Auto All</button>
-      <button type="button" class="mode-pill" data-target="0">💻 Art 1 (Laptop)</button>
-      <button type="button" class="mode-pill" data-target="1">📺 Art 2 (TV)</button>
-      <button type="button" class="mode-pill" data-target="2">🖥️ Art 3 (Desktop)</button>
+      <button type="button" class="mode-pill active" data-target="-1">✨ Auto</button>
+      <button type="button" class="mode-pill" data-target="0">💻 Art 1</button>
+      <button type="button" class="mode-pill" data-target="1">📺 Art 2</button>
+      <button type="button" class="mode-pill" data-target="2">🖥️ Art 3</button>
     </div>
 
     <!-- Sound Toggle Button -->
@@ -451,7 +458,6 @@
           width="1.778"
           rotation="0 0 0"
           visible="false"
-          material="shader: flat; opacity: 0; transparent: true;"
         ></a-video>
       </a-entity>
 
@@ -477,7 +483,6 @@
           width="1.778"
           rotation="0 0 0"
           visible="false"
-          material="shader: flat; opacity: 0; transparent: true;"
         ></a-video>
       </a-entity>
 
@@ -503,7 +508,6 @@
           width="1.778"
           rotation="0 0 0"
           visible="false"
-          material="shader: flat; opacity: 0; transparent: true;"
         ></a-video>
       </a-entity>
     </a-scene>
@@ -655,19 +659,16 @@
       let confirmedActiveTarget = null; // null | 0 | 1 | 2
       let currentFilterTarget = -1; // -1 = Auto all, 0 = Art 1, 1 = Art 2, 2 = Art 3
 
-      // Start with all 3D planes hidden with 0 opacity
+      // Start with all 3D video planes and borders completely hidden
       videoPlanes.forEach(plane => {
-        if (plane) {
-          plane.setAttribute('visible', 'false');
-          plane.setAttribute('material', 'shader: flat; opacity: 0; transparent: true;');
-        }
+        if (plane) plane.setAttribute('visible', 'false');
       });
       borders.forEach(border => {
         if (border) border.setAttribute('visible', 'false');
       });
 
       // Reveal 3D plane ONLY after the video has decoded real frames and is actively rendering
-      // This 100% prevents unbuffered black quads from covering the camera
+      // This 100% guarantees unbuffered black quads can NEVER cover the camera
       targetVideos.forEach((vid, idx) => {
         if (!vid) return;
         const plane = videoPlanes[idx];
@@ -675,11 +676,10 @@
 
         const revealPlaneIfReady = () => {
           if (confirmedActiveTarget === idx && vid.currentTime > 0.03 && !vid.paused) {
-            if (plane) {
+            if (plane && plane.getAttribute('visible') !== 'true') {
               plane.setAttribute('visible', 'true');
-              plane.setAttribute('material', 'shader: flat; opacity: 1; transparent: false;');
             }
-            if (border) {
+            if (border && border.getAttribute('visible') !== 'true') {
               border.setAttribute('visible', 'true');
             }
           }
@@ -688,6 +688,13 @@
         vid.addEventListener('timeupdate', revealPlaneIfReady);
         vid.addEventListener('playing', revealPlaneIfReady);
       });
+
+      function hideTargetVideo(idx) {
+        const vid = targetVideos[idx];
+        if (vid && !vid.paused) vid.pause();
+        if (videoPlanes[idx]) videoPlanes[idx].setAttribute('visible', 'false');
+        if (borders[idx]) borders[idx].setAttribute('visible', 'false');
+      }
 
       function activateTarget(targetIndex) {
         if (confirmedActiveTarget === targetIndex) return;
@@ -708,13 +715,7 @@
               });
             }
           } else {
-            // Pause any other video (do NOT seek to 0 to preserve video hardware decoders)
-            if (!vid.paused) vid.pause();
-            if (videoPlanes[idx]) {
-              videoPlanes[idx].setAttribute('visible', 'false');
-              videoPlanes[idx].setAttribute('material', 'shader: flat; opacity: 0; transparent: true;');
-            }
-            if (borders[idx]) borders[idx].setAttribute('visible', 'false');
+            hideTargetVideo(idx);
           }
         });
       }
@@ -732,17 +733,7 @@
         console.log(`[AR Engine] Target lost: Artwork ${targetIndex + 1} (targetIndex: ${targetIndex})`);
         if (confirmedActiveTarget === targetIndex) {
           confirmedActiveTarget = null;
-          const vid = targetVideos[targetIndex];
-          if (vid && !vid.paused) {
-            vid.pause();
-          }
-          if (videoPlanes[targetIndex]) {
-            videoPlanes[targetIndex].setAttribute('visible', 'false');
-            videoPlanes[targetIndex].setAttribute('material', 'shader: flat; opacity: 0; transparent: true;');
-          }
-          if (borders[targetIndex]) {
-            borders[targetIndex].setAttribute('visible', 'false');
-          }
+          hideTargetVideo(targetIndex);
 
           setTimeout(() => {
             if (confirmedActiveTarget === null && hud) {
@@ -800,39 +791,70 @@
       // Artwork Mode Selector (Auto All vs Dedicated Target Focus)
       const modePills = document.querySelectorAll('.mode-pill');
 
-      modePills.forEach(pill => {
-        pill.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const target = parseInt(pill.getAttribute('data-target'), 10);
-          currentFilterTarget = target;
+      function applyTargetFilter(target) {
+        console.log(`[AR Engine] Switching to target filter: ${target}`);
+        currentFilterTarget = target;
 
-          modePills.forEach(p => p.classList.remove('active'));
-          pill.classList.add('active');
-
-          const arSystem = scene ? scene.systems['mindar-image-system'] : null;
-          if (arSystem) {
-            arSystem.switchTarget(target);
-            console.log(`[AR Engine] Switched target filter to: ${target === -1 ? 'Auto All' : 'Artwork ' + (target + 1)}`);
-          }
-
-          // If filtering to a specific artwork, immediately pause any other video and hide planes
-          if (target !== -1) {
-            targetVideos.forEach((vid, idx) => {
-              if (idx !== target) {
-                if (vid && !vid.paused) vid.pause();
-                if (videoPlanes[idx]) {
-                  videoPlanes[idx].setAttribute('visible', 'false');
-                  videoPlanes[idx].setAttribute('material', 'shader: flat; opacity: 0; transparent: true;');
-                }
-                if (borders[idx]) borders[idx].setAttribute('visible', 'false');
-              }
-            });
-            if (confirmedActiveTarget !== target) {
-              confirmedActiveTarget = null;
-              if (hud) hud.classList.remove('hidden');
-            }
+        modePills.forEach(p => {
+          const t = parseInt(p.getAttribute('data-target'), 10);
+          if (t === target) {
+            p.classList.add('active');
+          } else {
+            p.classList.remove('active');
           }
         });
+
+        // Apply filter directly to MindAR controller
+        const arSystem = scene && scene.systems ? scene.systems['mindar-image-system'] : null;
+        if (arSystem && arSystem.controller) {
+          try {
+            arSystem.controller.interestedTargetIndex = target;
+            // Force MindAR to immediately clear tracking on other targets so target 3 isn't shadowed
+            if (arSystem.controller.trackingStates && target !== -1) {
+              arSystem.controller.trackingStates.forEach((state, idx) => {
+                if (idx !== target && state) {
+                  state.isTracking = false;
+                }
+              });
+            }
+            console.log(`[AR Engine] Target filter set to: ${target}`);
+          } catch (err) {
+            console.warn('[AR Engine] Error setting target filter:', err);
+          }
+        }
+
+        // If filtering to a specific artwork, immediately silence other videos
+        targetVideos.forEach((vid, idx) => {
+          if (target !== -1 && idx !== target) {
+            hideTargetVideo(idx);
+          }
+        });
+
+        if (target !== -1 && confirmedActiveTarget !== target) {
+          confirmedActiveTarget = null;
+          if (hud) hud.classList.remove('hidden');
+        }
+
+        // Instant visual HUD status feedback
+        const hudText = document.querySelector('.hud-text span:last-child');
+        if (hudText) {
+          if (target === 0) hudText.innerText = 'Scan Artwork 1 (Laptop)';
+          else if (target === 1) hudText.innerText = 'Scan Artwork 2 (TV)';
+          else if (target === 2) hudText.innerText = 'Scan Artwork 3 (Desktop)';
+          else hudText.innerText = 'Align Artwork in Frame';
+        }
+      }
+
+      modePills.forEach(pill => {
+        const handleSelect = (e) => {
+          if (e.cancelable) e.preventDefault();
+          e.stopPropagation();
+          const target = parseInt(pill.getAttribute('data-target'), 10);
+          applyTargetFilter(target);
+        };
+
+        pill.addEventListener('click', handleSelect);
+        pill.addEventListener('touchend', handleSelect, { passive: false });
       });
     </script>
   </body>
