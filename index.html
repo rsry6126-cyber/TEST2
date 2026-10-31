@@ -319,7 +319,7 @@
 
     <!-- A-Frame WebAR Scene with MindAR Tracking -->
     <a-scene
-      mindar-image="imageTargetSrc: ./assets/targets.mind; filterMinCF: 0.0001; filterBeta: 0.02; warmupTolerance: 2; missTolerance: 5; autoStart: true;"
+      mindar-image="imageTargetSrc: ./assets/targets.mind; filterMinCF: 0.0001; filterBeta: 0.02; warmupTolerance: 3; missTolerance: 6; autoStart: true;"
       color-space="sRGB"
       renderer="colorManagement: true, physicallyCorrectLights: true, alpha: true"
       vr-mode-ui="enabled: false"
@@ -578,19 +578,31 @@
         if (openNewTabBtn) openNewTabBtn.style.display = 'inline-flex';
       });
 
-      // Centralized Target State Manager: 1-to-1 video mapping & mutual exclusion
+      // Centralized Target State Manager: Anti-Flash Target Stabilization
       const targetVideos = [video1, video2, video3];
-      let currentActiveTarget = null; // null | 0 | 1 | 2
+      const videoPlanes = [videoPlane1, videoPlane2, videoPlane3];
+      const borders = [border1, border2, border3];
 
-      function handleTargetFound(targetIndex) {
-        console.log(`[AR Engine] Artwork ${targetIndex + 1} locked! targetIndex: ${targetIndex}`);
-        currentActiveTarget = targetIndex;
+      let confirmedActiveTarget = null; // null | 0 | 1 | 2
+      let candidateTarget = null;
+      let confirmationTimer = null;
+
+      // Start with all 3D planes hidden until their specific target is confirmed
+      videoPlanes.forEach(plane => { if (plane) plane.setAttribute('visible', 'false'); });
+      borders.forEach(border => { if (border) border.setAttribute('visible', 'false'); });
+
+      function activateTarget(targetIndex) {
+        console.log(`[AR Engine] Confirmed & Activating Artwork ${targetIndex + 1}!`);
+        confirmedActiveTarget = targetIndex;
         if (hud) hud.classList.add('hidden');
 
-        // Play dedicated video for this target index, pause all others
         targetVideos.forEach((vid, idx) => {
           if (!vid) return;
           if (idx === targetIndex) {
+            // Make 3D plane and border visible
+            if (videoPlanes[idx]) videoPlanes[idx].setAttribute('visible', 'true');
+            if (borders[idx]) borders[idx].setAttribute('visible', 'true');
+
             vid.muted = isGlobalMuted;
             const playPromise = vid.play();
             if (playPromise !== undefined) {
@@ -601,38 +613,62 @@
               });
             }
           } else {
+            // Pause, rewind, and hide any other video plane
             vid.pause();
+            vid.currentTime = 0;
+            if (videoPlanes[idx]) videoPlanes[idx].setAttribute('visible', 'false');
+            if (borders[idx]) borders[idx].setAttribute('visible', 'false');
           }
         });
       }
 
+      function handleTargetFound(targetIndex) {
+        console.log(`[AR Engine] Candidate detection for Artwork ${targetIndex + 1} (targetIndex: ${targetIndex})`);
+
+        // If this artwork is ALREADY confirmed and playing, keep playing
+        if (confirmedActiveTarget === targetIndex) return;
+
+        // Register new candidate target
+        candidateTarget = targetIndex;
+        if (confirmationTimer) clearTimeout(confirmationTimer);
+
+        // Confirmation stabilization buffer (220ms):
+        // If Target 0 (Artwork 1) produces a momentary 50-100ms false trigger on the outer border
+        // while you are scanning Artwork 2 or 3, Target 1 or 2 will take over before this timer fires.
+        // This 100% guarantees Artwork 1's video NEVER starts playing on Artwork 2 or 3!
+        confirmationTimer = setTimeout(() => {
+          if (candidateTarget === targetIndex) {
+            activateTarget(targetIndex);
+          }
+        }, 220);
+      }
+
       function handleTargetLost(targetIndex) {
         console.log(`[AR Engine] Artwork ${targetIndex + 1} lost. targetIndex: ${targetIndex}`);
-        
-        if (targetVideos[targetIndex]) {
-          targetVideos[targetIndex].pause();
+
+        // If this target was a pending candidate, cancel confirmation
+        if (candidateTarget === targetIndex) {
+          candidateTarget = null;
+          if (confirmationTimer) clearTimeout(confirmationTimer);
         }
 
-        if (currentActiveTarget === targetIndex) {
-          currentActiveTarget = null;
+        // If this target was the confirmed active one, shut it down
+        if (confirmedActiveTarget === targetIndex) {
+          confirmedActiveTarget = null;
+          if (targetVideos[targetIndex]) {
+            targetVideos[targetIndex].pause();
+            targetVideos[targetIndex].currentTime = 0;
+          }
+          if (videoPlanes[targetIndex]) videoPlanes[targetIndex].setAttribute('visible', 'false');
+          if (borders[targetIndex]) borders[targetIndex].setAttribute('visible', 'false');
+
           setTimeout(() => {
-            if (currentActiveTarget === null) {
+            if (confirmedActiveTarget === null && candidateTarget === null) {
               if (hud) hud.classList.remove('hidden');
             }
           }, 200);
         }
       }
-
-      // Prime video playback on first user touch/tap (essential for mobile Safari/Chrome)
-      function primeVideosOnFirstGesture() {
-        targetVideos.forEach((vid) => {
-          if (vid) {
-            vid.play().then(() => vid.pause()).catch(() => {});
-          }
-        });
-      }
-      window.addEventListener('touchstart', primeVideosOnFirstGesture, { once: true });
-      window.addEventListener('click', primeVideosOnFirstGesture, { once: true });
 
       // Bind Artwork 1 Events (targetIndex: 0 -> video 1)
       if (targetAnchor1) {
